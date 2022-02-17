@@ -18,7 +18,6 @@ typedef struct
    uint32 SR;       /* FLASH status register,           Address offset: 0x0C */
    uint32 CR;       /* FLASH control register,          Address offset: 0x10 */
    uint32 OPTCR;    /* FLASH option control register ,  Address offset: 0x14 */
-   uint32 OPTCR1;   /* FLASH option control register 1, Address offset: 0x18 */
 } FLASH_TypeDef;
 /*****************************************************
  *              FLASH MEMORY REGISTERS               *

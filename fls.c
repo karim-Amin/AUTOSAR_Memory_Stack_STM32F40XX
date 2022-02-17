@@ -29,7 +29,7 @@
    
 STATIC MemIf_StatusType Flash_Status = MEMIF_UNINIT;
 STATIC MemIf_ModeType Flash_Mode;
-STATIC Fls_configType* Fls_config_ptr = NULL_PTR;
+STATIC const Fls_configType* Fls_config_ptr = NULL_PTR;
 
 /******************************************************************************
  *                      API Service Definitions                               *
@@ -86,14 +86,14 @@ void Fls_Init( const Fls_configType  * config_ptr){
   /* Configure the data and instruction caches and Prefetch */
   if( config_ptr->fls_data_cache_enable == TRUE){
 
-  /* SET DCEN bit in ACR register */
-  SET_BIT(FLASH->ACR,10);
+  /* SET DCEN bit => BIT NUMBER 10 in ACR register */
+  SET_BIT(FLASH->ACR,FLS_BIT_NUMBER_10);
   }
   else if( config_ptr->fls_data_cache_enable == FALSE)
   {
     
   /* CLEAR DCEN bit in ACR register */
-  CLEAR_BIT(FLASH->ACR,10);
+  CLEAR_BIT(FLASH->ACR,FLS_BIT_NUMBER_10);
   }else{
     
     /*do nothing */ 
@@ -102,14 +102,14 @@ void Fls_Init( const Fls_configType  * config_ptr){
    /* Configure the data and instruction caches and Prefetch */
   if( config_ptr->fls_instruction_cache_enable == TRUE){
 
-  /* SET ICEN bit in ACR register */
-  SET_BIT(FLASH->ACR,9);
+  /* SET ICEN bit number 9 in ACR register */
+  SET_BIT(FLASH->ACR,FLS_BIT_NUMBER_9);
   }
   else if( config_ptr->fls_data_cache_enable == FALSE)
   {
     
-  /* CLEAR ICEN bit in ACR register */
-  CLEAR_BIT(FLASH->ACR,9);
+  /* CLEAR ICEN bit number 9 in ACR register */
+  CLEAR_BIT(FLASH->ACR,FLS_BIT_NUMBER_9);
   }else{
     
     /*do nothing */ 
@@ -118,14 +118,14 @@ void Fls_Init( const Fls_configType  * config_ptr){
    /* Configure the data and instruction caches and Prefetch */
   if( config_ptr->fls_prefetch_enable == TRUE){
 
-  /* SET PRFTEN bit in ACR register */
-  SET_BIT(FLASH->ACR,8);
+  /* SET PRFTEN bit number 8 in ACR register */
+  SET_BIT(FLASH->ACR,FLS_BIT_NUMBER_8);
   }
   else if( config_ptr->fls_data_cache_enable == FALSE)
   {
     
-  /* CLEAR PRFTEN bit in ACR register */
-  CLEAR_BIT(FLASH->ACR,8);
+  /* CLEAR PRFTEN bit number 8 in ACR register */
+  CLEAR_BIT(FLASH->ACR,FLS_BIT_NUMBER_8);
   }else{
     
     /*do nothing */ 
@@ -134,9 +134,41 @@ void Fls_Init( const Fls_configType  * config_ptr){
    * 1=> KEY1 = 0x45670123
    * 2=> KEY2 = 0xCDEF89AB
    */
-  FLASH->KEYR |= 
+  FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
+  FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
   
-  
-  
-  
+  /* check the usage of the interrupts */
+#if (FLS_USE_INTERRUPTS == TRUE)
+  FLASH->CR  |= FLS_INTERRUPT_ENABLE_MASK;
+#endif
+  /* Set the parallelism size which start from bit number 8 */
+  FLASH->CR |= (config_ptr->fls_p_size) << FLS_BIT_NUMBER_8;
+  /* Lock again the control register for security (LOCK bit in 31 position) */
+  SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
+  /* unlock the option control register 
+   * 1=> KEY1 = 0x45670123
+   * 2=> KEY2 = 0xCDEF89AB
+   */
+  FLASH->OPTKEYR = FLS_UNLOCK_OPTION_CR_KEY1;
+  FLASH->OPTKEYR = FLS_UNLOCK_OPTION_CR_KEY2;
+  /* Check the Write protection option */
+  if( config_ptr->fls_write_protection_enable == TRUE )
+  {
+    /* put zeros in the bits number [27 : 16] */
+    FLASH->OPTCR &= FLS_WRITE_PROTECTION_MASK; 
+  }else{
+    /* put ones in the bits number [27 : 16] */
+    FLASH->OPTCR |= ~(FLS_WRITE_PROTECTION_MASK);
+  }
+  /* set the Read protection option ( The Start position of read protection is bit number 8 )*/
+  FLASH->OPTCR =  (FLASH->OPTCR & FLS_READ_PROTECTION_MASK) | ((config_ptr->fls_read_protection) << FLS_BIT_NUMBER_8);
+  /* Set the brownout level ( The Start position of BOR level is bit number 2 ) */
+  FLASH->OPTCR = (FLASH->OPTCR & FLS_BOR_LEVEL_MASK) | ((config_ptr->fls_BOR_level) << FLS_BIT_NUMBER_2);
+  /* trigger user option operation The START BIT is the bit number 1 in OPTCR register */
+  SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_1);
+  /* wait untill that operation compelete as it is Synchronous function */
+  /* check the BSY bit that is bit number 16 in STATUS register */
+  while(BIT_IS_SET(FLASH->SR,FLS_BIT_NUMBER_16));
+  /* Unlock the option control register for security by setting OPTION LOCK BIT which is bit number zero */
+  SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_1);
 }
