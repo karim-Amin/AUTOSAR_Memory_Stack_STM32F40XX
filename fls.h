@@ -87,6 +87,17 @@
 #include "Common_Macros.h"
 
 /******************************************************************************
+ *                         Constants Definitions                              *
+*******************************************************************************/
+#define FLS_MAX_CALL_CYCLE              (1U)
+#define FLS_DCEN_BIT_NUMBER             (10U)
+#define FLS_ICEN_BIT_NUMBER             (9U)
+#define FLS_PRFTEN_BIT_NUMBER           (8U)
+#define FLS_KEY2_NUM_OF_SHIFTS          (16U)
+#define FLS_ACR_MASK                    (0xFFFFFFF8)
+#define FLS_UNLOCK_CR_KEY1              (0x45670123)
+#define FLS_UNLOCK_CR_KEY2              (0xCDEF89AB)
+/******************************************************************************
  *                      API Service Id Macros                                 *
 *******************************************************************************/
 #define FLS_INIT_SID                    (0x00)
@@ -172,20 +183,21 @@ typedef enum{
 /* this struct for initializing the flash memory */
 typedef struct{
   /* flash speed of operations */
-  Latancy_Type          latancy;
-  parallelism_Type      p_size;
+  Latancy_Type          fls_latancy;
+  parallelism_Type      fls_p_size;
   /* user option bytes */
-  BOR_Level_Type        BOR_level;
+  BOR_Level_Type        fls_BOR_level;
+  /* Cycle time of calls of the flash driver's main function (in seconds ) range : 0 -> 1 */
+  float32               fls_call_cycle;
+  /* This parameter is the default FLS device mode after initialization */
+  MemIf_ModeType        fls_default_mode;
   /* flash memory protection */
-  Read_protection_Type  read_protection;
-  boolean               write_protection_enable;
+  Read_protection_Type  fls_read_protection;    
+  boolean               fls_write_protection_enable;
   /* caching and prefetch feature */
-  boolean               data_cache_enable;
-  boolean               instruction_cache_enable;
-  boolean               prefetch_enable;
-  /* interrupt feature */
-  boolean               error_interrupt_enable;
-  boolean               end_of_op_interrupt_enable;
+  boolean               fls_data_cache_enable;
+  boolean               fls_instruction_cache_enable;
+  boolean               fls_prefetch_enable;
 }Fls_configType;
 
 /*******************************************************************************
@@ -239,6 +251,8 @@ Std_ReturnType Fls_Write(
                          Fls_LengthType  Length
                                                       );
 
+/* Check if the user configured this api on or off*/
+#if ( FLS_CANCEL_API == STD_ON)
 /*******************************************************************************
 * Service Name: Fls_Cancel
 * Sync/Async: Synchronous
@@ -251,6 +265,10 @@ Std_ReturnType Fls_Write(
 ********************************************************************************/
 void Fls_Cancel( void );
 
+#endif
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_GET_STATUS_API == STD_ON)
 /*******************************************************************************
 * Service Name: Fls_GetStatus
 * Sync/Async: Synchronous
@@ -263,6 +281,10 @@ void Fls_Cancel( void );
 ********************************************************************************/
 MemIf_StatusType Fls_GetStatus( void );
 
+#endif
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_GET_JOB_RESULT_API == STD_ON)
 /*******************************************************************************
 * Service Name: Fls_GetJobResult
 * Sync/Async: Synchronous
@@ -274,6 +296,8 @@ MemIf_StatusType Fls_GetStatus( void );
 * Description: returns the Result of the last job 
 ********************************************************************************/
 MemIf_JobResultType Fls_GetJobResult( void );
+
+#endif
 
 /*******************************************************************************
 * Service Name: Fls_Write
@@ -295,6 +319,8 @@ Std_ReturnType Fls_Read(
                          const uint8* TargetAddressPtr,
                          Fls_LengthType  Length
                                                       );
+/* Check if the user configured this api on or off*/
+#if ( FLS_COMPARE_API == STD_ON)
 /*******************************************************************************
 * Service Name: Fls_Compare
 * Sync/Async: ASynchronous
@@ -316,6 +342,10 @@ Std_ReturnType Fls_Compare(
                          const uint8* TargetAddressPtr,
                          Fls_LengthType  Length
                                                       );
+#endif
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_SET_MODE_API == STD_ON)
 /*******************************************************************************
 * Service Name: Fls_SetMode
 * Sync/Async: Synchronous
@@ -329,6 +359,10 @@ Std_ReturnType Fls_Compare(
 ********************************************************************************/
 void Fls_SetMode( MemIf_ModeType Mode);
 
+#endif  
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_VERSION_INFO_API == STD_ON)
 /*******************************************************************************
 * Service Name: Fls_GetVersionInfo
 * Sync/Async: Synchronous
@@ -340,6 +374,8 @@ void Fls_SetMode( MemIf_ModeType Mode);
 * Description: Returns the version information of this module. 
 ********************************************************************************/
 void Fls_GetVersionInfo( Std_VersionInfoType* versioninfoPtr );
+
+#endif 
 
 /*******************************************************************************
 * Service Name: Fls_MainFunction

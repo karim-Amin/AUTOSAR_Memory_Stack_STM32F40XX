@@ -37,5 +37,5 @@
  ||  (FLS_PBCFG_SW_PATCH_VERSION != FLS_SW_PATCH_VERSION))
   #error "The SW version of PBcfg.c does not match the expected Software version"
 #endif
-
-const Fls_configType  fls_configuration = { five_ws , x32_psize , BOR_off , read_level_0 , FALSE , TRUE , TRUE , TRUE , FALSE , FALSE };
+/* PB structure used with FLS_Init API */
+const Fls_configType  fls_configuration = { five_ws , x32_psize , BOR_off , 0.5, MEMIF_MODE_SLOW , read_level_0 ,FALSE , TRUE , TRUE , TRUE};

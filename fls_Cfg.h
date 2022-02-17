@@ -51,16 +51,20 @@
    
 /* Pre-compile option for loading the flash access code to the RAM */
 #define FLS_AC_LOAD_ON_JOB_START             (STD_OFF)
-   
+     
 /* BASE ADDRESS definition for STM32F405RG Microcontroller */
 #define FLS_BASE_ADDRESS                     (Fls_AddressType)(0x08000000)
 
+/* Address offset in RAM to which the erase flash access code shall be loaded. Used as function pointer to access the erase flash access code. */
+#define FLS_AC_ERASE                         (Fls_AddressType)(0x0)
+
+/* Address offset in RAM to which the Write flash access code shall be loaded. Used as function pointer to access the erase flash access code. */
+#define FLS_AC_WRITE                         (Fls_AddressType)(0x0)
+   
 /* Total size of flash memory 1MB (1024 KB => ( (1024 * 1024) -1 )Bytes  ) */
 #define FLS_TOTAL_SIZE                       (Fls_AddressType)(1048575U) 
    
 /* Flash Memory Driver Index */
 #define FLS_DRIVER_INDEX                     (0U)
-   
-
-   
-#endif FLS_CFG_H        
+  
+#endif FLS_CFG_H   
