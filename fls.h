@@ -89,6 +89,7 @@
 /******************************************************************************
  *                         Constants Definitions                              *
 *******************************************************************************/
+#define FLS_BIT_NUMBER_0                (0U)
 #define FLS_BIT_NUMBER_1                (1U)
 #define FLS_BIT_NUMBER_2                (2U)
 #define FLS_BIT_NUMBER_3                (3U)

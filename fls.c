@@ -169,6 +169,8 @@ void Fls_Init( const Fls_configType  * config_ptr){
   /* wait untill that operation compelete as it is Synchronous function */
   /* check the BSY bit that is bit number 16 in STATUS register */
   while(BIT_IS_SET(FLASH->SR,FLS_BIT_NUMBER_16));
-  /* Unlock the option control register for security by setting OPTION LOCK BIT which is bit number zero */
-  SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_1);
+  /* lock the option control register for security by setting OPTION LOCK BIT which is bit number zero */
+  SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_0);
+  /* Get the flash memory Mode ( Fast or slow )*/
+  Flash_Mode = config_ptr->fls_default_mode ;
 }
