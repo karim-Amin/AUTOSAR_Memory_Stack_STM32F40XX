@@ -218,7 +218,7 @@ void Fls_Init( const Fls_configType  * config_ptr);
 Std_ReturnType Fls_Erase(
                          Fls_AddressType TargetAdderss,
                          Fls_LengthType  Length
-                                                      )
+                                                      );
 
 /*******************************************************************************
 * Service Name: Fls_Write
@@ -229,15 +229,15 @@ Std_ReturnType Fls_Erase(
 *                  Length => Number of bytes to erase.
 * Parameters (inout): None
 * Parameters (out): None
-* Return value:  E_OK: erase command has been accepted 
-*                E_NOT_OK: erase command has not been accepted
+* Return value:  E_OK: write command has been accepted 
+*                E_NOT_OK: write command has not been accepted
 * Description: Writes one or more complete flash pages.
 ********************************************************************************/
 Std_ReturnType Fls_Write(
                          Fls_AddressType TargetAdderss,
                          const uint8* SourceAddressPtr,
                          Fls_LengthType  Length
-                                                      )
+                                                      );
 
 /*******************************************************************************
 * Service Name: Fls_Cancel
@@ -262,6 +262,95 @@ void Fls_Cancel( void );
 * Description: returns the driver state
 ********************************************************************************/
 MemIf_StatusType Fls_GetStatus( void );
+
+/*******************************************************************************
+* Service Name: Fls_GetJobResult
+* Sync/Async: Synchronous
+* Reentrancy: Reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: MemIf_JobResultType
+* Description: returns the Result of the last job 
+********************************************************************************/
+MemIf_JobResultType Fls_GetJobResult( void );
+
+/*******************************************************************************
+* Service Name: Fls_Write
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): SourceAdderss => Source address in flash memory. This address offset will be added to the flash memory base address
+*                  TargetAddressPtr => Pointer to Target data buffer.
+*                  Length => Number of bytes to Read.
+*
+* Parameters (inout): None
+* Parameters (out): TargetAddressPtr => Pointer to Target data buffer.
+*
+* Return value:  E_OK: read command has been accepted 
+*                E_NOT_OK: read command has not been accepted
+* Description: Reads from the flash memory.
+********************************************************************************/
+Std_ReturnType Fls_Read(
+                         Fls_AddressType SourceAdderss,
+                         const uint8* TargetAddressPtr,
+                         Fls_LengthType  Length
+                                                      );
+/*******************************************************************************
+* Service Name: Fls_Compare
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): SourceAdderss => Source address in flash memory. This address offset will be added to the flash memory base address
+*                  TargetAddressPtr => Pointer to Target data buffer.
+*                  Length => Number of bytes to Read.
+*
+* Parameters (inout): None
+* Parameters (out): None
+*
+* Return value:  E_OK: read command has been accepted 
+*                E_NOT_OK: read command has not been accepted
+*
+* Description: Compares the contents of an area of flash memory with that of an application data buffer.
+********************************************************************************/
+Std_ReturnType Fls_Compare(
+                         Fls_AddressType SourceAdderss,
+                         const uint8* TargetAddressPtr,
+                         Fls_LengthType  Length
+                                                      );
+/*******************************************************************************
+* Service Name: Fls_SetMode
+* Sync/Async: Synchronous
+* Reentrancy: Non Reentrant
+* Parameters (in): Mode => MEMIF_MODE_SLOW: Slow read access / normal SPI access. 
+*                          MEMIF_MODE_FAST: Fast read access / SPI burst access. 
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: None
+* Description: returns the driver state
+********************************************************************************/
+void Fls_SetMode( MemIf_ModeType Mode);
+
+/*******************************************************************************
+* Service Name: Fls_GetVersionInfo
+* Sync/Async: Synchronous
+* Reentrancy: Reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): versioninfoPtr => Pointer to where to store the version information of this module.
+* Return value: None
+* Description: Returns the version information of this module. 
+********************************************************************************/
+void Fls_GetVersionInfo( Std_VersionInfoType* versioninfoPtr );
+
+/*******************************************************************************
+* Service Name: Fls_MainFunction
+* Timing : Fixed_cyclic
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: None
+* Description: Performs the proccessing of jobs
+********************************************************************************/
+void Fls_MainFunction( void );
 
 /* Extern PB structures to be used by fls and other modules */
 extern const Fls_configType  fls_configuration;
