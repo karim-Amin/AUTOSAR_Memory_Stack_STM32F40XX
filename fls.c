@@ -38,6 +38,9 @@ STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
 STATIC Fls_AddressType g_TargetAdderss;
 STATIC Fls_AddressType g_SourceAdderss;
 STATIC Fls_LengthType  g_Length;
+/* To Hold the first sector number and number of sectors which included in the operation*/
+STATIC uint8  g_First_Sector_number;
+STATIC uint8  g_number_of_sectors = 0;
 /******************************************************************************
  *                      API Service Definitions                               *
 ******************************************************************************/
@@ -244,6 +247,63 @@ Std_ReturnType Fls_Erase(
   }
   
 #endif
+  /* Copy the method parameters to initiate erase job */
+  g_TargetAdderss = TargetAdderss;
+  g_Length = Length;
+  /* iterator for the for loop which is looping untill the number of sectors */
+  uint8 iterator;
+  /* to hold the next start address of the sector */
+  Fls_AddressType next_start_add = FLS_BASE_ADDRESS;
+  /* declare the start address of each Sector */
+  Fls_AddressType sectors_start_adresses[FLS_NUM_OF_SECTORS] ;
+  
+  for(iterator = 0; iterator < FLS_NUM_OF_SECTORS ; iterator++)
+  {
+    sectors_start_adresses[iterator] = next_start_add;
+
+    switch(iterator){
+      /* add the size of the sector to the base address (sector0 -> sector3 = 16 Kbytes)*/
+    case FLS_SECTOR0:
+    case FLS_SECTOR1:
+    case FLS_SECTOR2:
+    case FLS_SECTOR3: next_start_add += FLS_SECTOR0_SIZE;
+      break;
+      /* add the size of the sector to the base address ( sector4 = 16 Kbytes)*/
+    case FLS_SECTOR4: next_start_add += FLS_SECTOR4_SIZE;
+      break;
+      /* add the size of the sector to the base address (sector5 -> sector11 = 128 Kbytes)*/
+    case FLS_SECTOR5:
+    case FLS_SECTOR6:
+    case FLS_SECTOR7:
+    case FLS_SECTOR8:
+    case FLS_SECTOR9:
+    case FLS_SECTOR10:
+    case FLS_SECTOR11: next_start_add += FLS_SECTOR5_SIZE;
+      break;
+    }
+  }
+  /* make a loop to know the frist sector to erase and the number of sectors */
+  for( iterator = 0;iterator < FLS_NUM_OF_SECTORS;iterator++ ){
+    /* Check if it is not the last sector */
+    if(iterator != FLS_SECTOR11){
+      /* Check if the Target address within the sector range */
+      if( ((TargetAdderss + FLS_BASE_ADDRESS) >= sectors_start_adresses[iterator])\
+         &&((TargetAdderss + FLS_BASE_ADDRESS)< sectors_start_adresses[iterator + 1]))
+      {
+        /* Store the sector number */
+        g_First_Sector_number = iterator;
+      }
+    }
+    else{
+      /* Store the sector number */
+        g_First_Sector_number = FLS_SECTOR11;
+    }
+  }
+  /* To Know how many sectors will be erased */
+  for( iterator = 0;iterator < FLS_NUM_OF_SECTORS;iterator++ ){
+    
+  }
+  
   
   return E_OK;
 }
