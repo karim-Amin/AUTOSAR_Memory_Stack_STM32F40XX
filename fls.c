@@ -26,12 +26,18 @@
 /******************************************************************************
  *                      Private Global variable                               *
 ******************************************************************************/
-   
+/* To Be able to track the module status */
 STATIC MemIf_StatusType g_Flash_Status = MEMIF_UNINIT;
+/* To Be able to track the module Mode */
 STATIC MemIf_ModeType g_Flash_Mode;
+/* To Be able to track the result of initiated task  */
 STATIC MemIf_JobResultType g_Flash_Job_Result ;
+/* To Store the configuration set if wanted in run time */
 STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
-
+/* To hold the data of the initiated task */
+STATIC Fls_AddressType g_TargetAdderss;
+STATIC Fls_AddressType g_SourceAdderss;
+STATIC Fls_LengthType  g_Length;
 /******************************************************************************
  *                      API Service Definitions                               *
 ******************************************************************************/
@@ -176,4 +182,68 @@ void Fls_Init( const Fls_configType  * config_ptr){
   g_Flash_Status = MEMIF_IDLE;
   /* After finishing initialization set the flash job result to MEMIF_JOB_OK */
   g_Flash_Job_Result = MEMIF_JOB_OK ; 
+}
+/*******************************************************************************
+* Service Name: Fls_Erase
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): TargetAdderss - Target address in flash memory. This address offset will be added to the flash memory base address.
+*                  Length - Number of bytes to erase
+* Parameters (inout): None
+* Parameters (out): None
+* Return value:  E_OK: erase command has been accepted 
+*                E_NOT_OK: erase command has not been accepted
+* Description: Erases flash sector(s).
+********************************************************************************/
+Std_ReturnType Fls_Erase(
+                         Fls_AddressType TargetAdderss,
+                         Fls_LengthType  Length
+                                                      )
+{
+  /* Check the development errors if enabled */
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_ERASE_SID,FLS_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+     /* Do nothing */   
+  }
+  
+  /* Check the flash module status */
+  if(g_Flash_Status == MEMIF_BUSY )
+  {
+     /* Report dev error if the flash module status */
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_ERASE_SID,FLS_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + TargetAdderss)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + TargetAdderss)<= FLS_LAST_ADDRESS) ) )
+  {
+    /* Report dev error if the address is out of range */
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_ERASE_SID,FLS_E_PARAM_ADDRESS);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address plus the length lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + TargetAdderss + Length)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + TargetAdderss)<= FLS_LAST_ADDRESS) && Length > FLS_OPERATION_ZERO_LENGTH) )
+  {
+      /* Report dev error if the address is out of range */
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_ERASE_SID,FLS_E_PARAM_LENGTH);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+#endif
+  
+  return E_OK;
 }

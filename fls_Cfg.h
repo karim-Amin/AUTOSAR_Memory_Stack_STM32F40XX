@@ -54,7 +54,10 @@
      
 /* BASE ADDRESS definition for STM32F405RG Microcontroller */
 #define FLS_BASE_ADDRESS                     (Fls_AddressType)(0x08000000)
-
+   
+/* last Address in the flash Memory */
+#define FLS_LAST_ADDRESS                     (Fls_AddressType)(0x080FFFFF)
+   
 /* Address offset in RAM to which the erase flash access code shall be loaded. Used as function pointer to access the erase flash access code. */
 #define FLS_AC_ERASE                         (Fls_AddressType)(0x0)
 

@@ -131,6 +131,7 @@
 #define FLS_UNLOCK_CR_KEY2              (0xCDEF89AB)
 #define FLS_UNLOCK_OPTION_CR_KEY1       (0x08192A3B)
 #define FLS_UNLOCK_OPTION_CR_KEY2       (0x4C5D6E7F)
+#define FLS_OPERATION_ZERO_LENGTH       (0U)
 /******************************************************************************
  *                      API Service Id Macros                                 *
 *******************************************************************************/
