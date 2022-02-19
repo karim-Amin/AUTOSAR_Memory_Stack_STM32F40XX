@@ -27,9 +27,10 @@
  *                      Private Global variable                               *
 ******************************************************************************/
    
-STATIC MemIf_StatusType Flash_Status = MEMIF_UNINIT;
-STATIC MemIf_ModeType Flash_Mode;
-STATIC const Fls_configType* Fls_config_ptr = NULL_PTR;
+STATIC MemIf_StatusType g_Flash_Status = MEMIF_UNINIT;
+STATIC MemIf_ModeType g_Flash_Mode;
+STATIC MemIf_JobResultType g_Flash_Job_Result ;
+STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
 
 /******************************************************************************
  *                      API Service Definitions                               *
@@ -60,7 +61,7 @@ void Fls_Init( const Fls_configType  * config_ptr){
     /* Do nothing */
   }
   /* Check the flash module status */
-  if(Flash_Status == MEMIF_BUSY )
+  if(g_Flash_Status == MEMIF_BUSY )
   {
      /* Report dev error if the flash module status */
     Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_INIT_SID,FLS_E_BUSY);
@@ -76,9 +77,7 @@ void Fls_Init( const Fls_configType  * config_ptr){
   }else
 #endif  
   {
-    Fls_config_ptr = config_ptr;
-    /* After finishing initialization */
-    Flash_Status = MEMIF_IDLE;
+    g_Fls_config_ptr = config_ptr;
   }
   /* Insert in the access control register how many wait states */
   FLASH->ACR = (FLASH->ACR & FLS_ACR_MASK)|(config_ptr->fls_latancy);
@@ -172,5 +171,9 @@ void Fls_Init( const Fls_configType  * config_ptr){
   /* lock the option control register for security by setting OPTION LOCK BIT which is bit number zero */
   SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_0);
   /* Get the flash memory Mode ( Fast or slow )*/
-  Flash_Mode = config_ptr->fls_default_mode ;
+  g_Flash_Mode = config_ptr->fls_default_mode ;
+  /* After finishing initialization set the flash status  to MEMIF_IDLE */
+  g_Flash_Status = MEMIF_IDLE;
+  /* After finishing initialization set the flash job result to MEMIF_JOB_OK */
+  g_Flash_Job_Result = MEMIF_JOB_OK ; 
 }
