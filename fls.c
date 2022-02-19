@@ -421,4 +421,69 @@ Std_ReturnType Fls_Read(
                          Fls_AddressType SourceAdderss,
                          const uint8* TargetAddressPtr,
                          Fls_LengthType  Length
-                                                      );
+                                                      )
+{
+    /* Check the development errors if enabled */
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_READ_SID , FLS_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+     /* Do nothing */   
+  }
+  
+  /* Check the flash module status */
+  if(g_Flash_Status == MEMIF_BUSY )
+  {
+     /* Report dev error if the flash module status */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_READ_SID , FLS_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + SourceAdderss)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + SourceAdderss)<= FLS_LAST_ADDRESS) ) )
+  {
+    /* Report dev error if the address is out of range */
+    
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_READ_SID , FLS_E_PARAM_ADDRESS);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address plus the length lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + SourceAdderss + Length)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + SourceAdderss)<= FLS_LAST_ADDRESS) && Length > FLS_OPERATION_ZERO_LENGTH) )
+  {
+    /* Report dev error if the address is out of range */
+    Det_ReportError( FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_READ_SID , FLS_E_PARAM_LENGTH );
+    return E_NOT_OK;
+  }else{
+  /* Do nothing */
+  }
+  
+  /* Check if the data buffer pointer is being null pointer */
+  if( TargetAddressPtr == NULL_PTR )
+  {
+  /* Report dev error if the data buffer pointer is null */
+    
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_READ_SID,FLS_E_PARAM_DATA);
+  }else{
+  /* Do nothing */
+  }
+#endif
+  /* copy the given parameters to Fls module internal variables */
+  g_SourceAdderss = SourceAdderss;
+  g_TargetAdderss_ptr = TargetAddressPtr;
+  g_Length = Length;
+  /* Set the status of the module to Busy until it finishes */
+  g_Flash_Status = MEMIF_BUSY;
+  /* Set the job of the module to job pending */
+  g_Flash_Job_Result = MEMIF_JOB_PENDING;
+  return E_OK;
+}
