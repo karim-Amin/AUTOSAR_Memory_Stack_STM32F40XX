@@ -335,7 +335,7 @@ MemIf_JobResultType Fls_GetJobResult( void );
 #endif
 
 /*******************************************************************************
-* Service Name: Fls_Write
+* Service Name: Fls_Read
 * Sync/Async: ASynchronous
 * Reentrancy: Non-reentrant
 * Parameters (in): SourceAdderss => Source address in flash memory. This address offset will be added to the flash memory base address

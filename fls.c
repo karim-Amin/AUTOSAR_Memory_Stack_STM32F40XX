@@ -37,6 +37,8 @@ STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
 /* To hold the data of the initiated task */
 STATIC Fls_AddressType g_TargetAdderss;
 STATIC Fls_AddressType g_SourceAdderss;
+STATIC  const uint8* g_SourceAdderss_ptr;
+STATIC  const uint8* g_TargetAdderss_ptr;
 STATIC Fls_LengthType  g_Length;
 /* To Hold the first sector number and number of sectors which included in the operation*/
 STATIC uint8  g_First_Sector_number;
@@ -315,3 +317,108 @@ Std_ReturnType Fls_Erase(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   return E_OK;
 }
+
+/*******************************************************************************
+* Service Name: Fls_Write
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): TargetAdderss => Target address in flash memory. This address offset will be added to the flash memory base address.
+*                  SourceAddressPtr => Pointer to source data buffer.
+*                  Length => Number of bytes to erase.
+* Parameters (inout): None
+* Parameters (out): None
+* Return value:  E_OK: write command has been accepted 
+*                E_NOT_OK: write command has not been accepted
+* Description: Writes one or more complete flash pages.
+********************************************************************************/
+Std_ReturnType Fls_Write(
+                         Fls_AddressType TargetAdderss,
+                         const uint8* SourceAddressPtr,
+                         Fls_LengthType  Length
+                                                      )
+{
+  /* Check the development errors if enabled */
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_WRITE_SID , FLS_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+     /* Do nothing */   
+  }
+  
+  /* Check the flash module status */
+  if(g_Flash_Status == MEMIF_BUSY )
+  {
+     /* Report dev error if the flash module status */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_WRITE_SID , FLS_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + TargetAdderss)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + TargetAdderss)<= FLS_LAST_ADDRESS) ) )
+  {
+    /* Report dev error if the address is out of range */
+    
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_WRITE_SID , FLS_E_PARAM_ADDRESS);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address plus the length lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + TargetAdderss + Length)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + TargetAdderss)<= FLS_LAST_ADDRESS) && Length > FLS_OPERATION_ZERO_LENGTH) )
+  {
+    /* Report dev error if the address is out of range */
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_WRITE_SID,FLS_E_PARAM_LENGTH);
+    return E_NOT_OK;
+  }else{
+  /* Do nothing */
+  }
+  
+  /* Check if the data buffer pointer is being null pointer */
+  if( SourceAddressPtr == NULL_PTR )
+  {
+  /* Report dev error if the data buffer pointer is null */
+    
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_WRITE_SID,FLS_E_PARAM_DATA);
+  }else{
+  /* Do nothing */
+  }
+#endif
+  /* copy the given parameters to Fls module internal variables */
+  g_TargetAdderss = TargetAdderss;
+  g_SourceAdderss_ptr = SourceAddressPtr;
+  g_Length = Length;
+  /* Set the status of the module to Busy until it finishes */
+  g_Flash_Status = MEMIF_BUSY;
+  /* Set the job of the module to job pending */
+  g_Flash_Job_Result = MEMIF_JOB_PENDING;
+  return E_OK;
+}
+
+/*******************************************************************************
+* Service Name: Fls_Read
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): SourceAdderss => Source address in flash memory. This address offset will be added to the flash memory base address
+*                  TargetAddressPtr => Pointer to Target data buffer.
+*                  Length => Number of bytes to Read.
+*
+* Parameters (inout): None
+* Parameters (out): TargetAddressPtr => Pointer to Target data buffer.
+*
+* Return value:  E_OK: read command has been accepted 
+*                E_NOT_OK: read command has not been accepted
+* Description: Reads from the flash memory.
+********************************************************************************/
+Std_ReturnType Fls_Read(
+                         Fls_AddressType SourceAdderss,
+                         const uint8* TargetAddressPtr,
+                         Fls_LengthType  Length
+                                                      );
