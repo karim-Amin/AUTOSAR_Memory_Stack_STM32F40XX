@@ -292,6 +292,8 @@ Std_ReturnType Fls_Erase(
       {
         /* Store the sector number */
         g_First_Sector_number = iterator;
+        /* justficatoin: to end the loop once it finds the sector number */
+        break;
       }
     }
     else{
@@ -300,10 +302,16 @@ Std_ReturnType Fls_Erase(
     }
   }
   /* To Know how many sectors will be erased */
-  for( iterator = 0;iterator < FLS_NUM_OF_SECTORS;iterator++ ){
-    
+  for( iterator = g_First_Sector_number;iterator < FLS_NUM_OF_SECTORS;iterator++ ){
+    /*  Length will be rounded up to the next full sector boundary */
+    if( ((TargetAdderss + FLS_BASE_ADDRESS + Length) > sectors_start_adresses[iterator]) )
+    {
+      g_number_of_sectors++;
+    }
   }
-  
-  
+  /* Set the status of the module to Busy until it finishes */
+  g_Flash_Status = MEMIF_BUSY;
+  /* Set the job of the module to job pending */
+  g_Flash_Job_Result = MEMIF_JOB_PENDING;
   return E_OK;
 }
