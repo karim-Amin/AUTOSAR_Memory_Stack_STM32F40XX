@@ -524,7 +524,7 @@ void Fls_MainFunction( void )
   /* Check The job result before execute the function if the job is pending -> execute */
   if( g_Flash_Job_Result == MEMIF_JOB_PENDING )
   {
-    /* this variable will be initialized once by to be add to the first sector number */
+    /* this variable will be initialized once by to be add to the first sector number and used in erase task */
      STATIC uint8 sector_offest = FLS_ZERO_VALUE;
     /* Check To Know the Type of the Job */
     switch(g_Fls_operation_type)
@@ -533,6 +533,19 @@ void Fls_MainFunction( void )
         
         break;
       case READ_OPERATION:
+          /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
+          while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
+          /* Check the mode of operation based on it know the max data handled in one cycle */
+          if(g_Fls_config_ptr->fls_default_mode == MEMIF_MODE_FAST)
+          {
+            
+          }
+          else if(g_Fls_config_ptr->fls_default_mode == MEMIF_MODE_SLOW)
+          {
+            
+          }else{
+            /* Do nothing */
+          }
         
         break;
       case WRITE_OPERATION:
@@ -564,6 +577,7 @@ void Fls_MainFunction( void )
           
           /* Set the start bit to start the operation which is bit number 16 */
           SET_BIT(FLASH->CR,FLS_BIT_NUMBER_16);
+          
           /* Lock again the control register for security (LOCK bit in 31 position) */
           SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
           /* incerment the offest var. */
