@@ -34,6 +34,8 @@ STATIC MemIf_ModeType g_Flash_Mode;
 STATIC MemIf_JobResultType g_Flash_Job_Result ;
 /* To Store the configuration set if wanted in run time */
 STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
+/* To make the main function Know the type of operation */
+FLS_Kind_of_operation g_Fls_operation_type = NO_OPERATION;
 /* To hold the data of the initiated task */
 STATIC Fls_AddressType g_TargetAdderss;
 STATIC Fls_AddressType g_SourceAdderss;
@@ -315,6 +317,8 @@ Std_ReturnType Fls_Erase(
   g_Flash_Status = MEMIF_BUSY;
   /* Set the job of the module to job pending */
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
+  /* Set the job Type to erase task */
+  g_Fls_operation_type = ERASE_OPERATION;
   return E_OK;
 }
 
@@ -399,6 +403,8 @@ Std_ReturnType Fls_Write(
   g_Flash_Status = MEMIF_BUSY;
   /* Set the job of the module to job pending */
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
+  /* Set the job Type to write task */
+  g_Fls_operation_type = WRITE_OPERATION;
   return E_OK;
 }
 
@@ -485,5 +491,20 @@ Std_ReturnType Fls_Read(
   g_Flash_Status = MEMIF_BUSY;
   /* Set the job of the module to job pending */
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
+  /* Set the job Type to read task */
+  g_Fls_operation_type = READ_OPERATION;
   return E_OK;
+}
+/*******************************************************************************
+* Service Name: Fls_MainFunction
+* Timing : Fixed_cyclic
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: None
+* Description: Performs the proccessing of jobs
+********************************************************************************/
+void Fls_MainFunction( void )
+{
+  
 }

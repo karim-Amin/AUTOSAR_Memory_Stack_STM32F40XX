@@ -167,9 +167,17 @@
 typedef uint32          Fls_AddressType;
 /* Specifies the number of bytes to read/write/erase/compare.  */
 typedef uint32          Fls_LengthType;
-
-/* Configuration definitions */
-
+/* Specifies the kind of operation to the flash module`s Main function */
+typedef enum{
+  NO_OPERATION,
+  READ_OPERATION,
+  WRITE_OPERATION,
+  ERASE_OPERATION,
+  COMPARE_OPERATION
+}FLS_Kind_of_operation;
+/*******************************************************************************
+ *                        Configuration Definitions                            *
+********************************************************************************/
 /* this is relation between the voltage range and cpu frequency (Data sheet page 80)*/
 typedef enum{
   zero_ws,
@@ -226,6 +234,14 @@ typedef struct{
   float32               fls_call_cycle;
   /* This parameter is the default FLS device mode after initialization */
   MemIf_ModeType        fls_default_mode;
+  /* The maximum number of bytes to read or compare in one cycle of the flash driver's job processing function in fast mode.  */
+  Fls_LengthType        fls_max_read_fast_mode;
+  /* The maximum number of bytes to read or compare in one cycle of the flash driver's job processing function in normal mode.  */
+  Fls_LengthType        fls_max_read_normal_mode;
+  /* The maximum number of bytes to write in one cycle of the flash driver's job processing function in fast mode.  */
+  Fls_LengthType        fls_max_write_fast_mode;
+  /* The maximum number of bytes to write in one cycle of the flash driver's job processing function in normal mode.  */
+  Fls_LengthType        fls_max_write_normal_mode;
   /* flash memory protection */
   Read_protection_Type  fls_read_protection;    
   boolean               fls_write_protection_enable;
