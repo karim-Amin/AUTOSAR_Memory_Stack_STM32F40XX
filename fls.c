@@ -506,5 +506,91 @@ Std_ReturnType Fls_Read(
 ********************************************************************************/
 void Fls_MainFunction( void )
 {
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
   
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_UNINIT);
+    
+  }else{
+     /* Do nothing */   
+  }
+#endif
+/* Check if the module proccessing is configured to Work with interrups or polling */
+#if(FLS_USE_INTERRUPTS == STD_OFF)
+  /* Check The job result before execute the function if the job is pending -> execute */
+  if( g_Flash_Job_Result == MEMIF_JOB_PENDING )
+  {
+    /* this variable will be initialized once by to be add to the first sector number */
+     STATIC uint8 sector_offest = FLS_ZERO_VALUE;
+    /* Check To Know the Type of the Job */
+    switch(g_Fls_operation_type)
+    {
+      case NO_OPERATION:
+        
+        break;
+      case READ_OPERATION:
+        
+        break;
+      case WRITE_OPERATION:
+        
+        break;
+      case ERASE_OPERATION:
+          
+        /* Check that there are sectors to erase */
+        if(g_number_of_sectors != FLS_ZERO_VALUE)
+        {
+          /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
+          while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
+          /* UNLOCK the flash control register by put in the flash key register two magic numbers
+           * 1=> KEY1 = 0x45670123
+           * 2=> KEY2 = 0xCDEF89AB
+           */
+          FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
+          FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
+          /* Select the sector number to erase */
+          /* 
+           * 1) clear the bits [6:3] which is SNB (sector number).
+           * 2) add first sector number to sector offest to get the sector number 
+           * 3) shift left by 3 as it is the start bit number of SNB bits
+           */
+          FLASH->CR = (FLASH->CR & FLS_CR_SNB_MASK) | ((g_First_Sector_number + sector_offest) << FLS_BIT_NUMBER_3);
+          
+          /* set the bit SER (sector erase ) which is bit number 1*/
+          SET_BIT(FLASH->CR,FLS_BIT_NUMBER_1);
+          
+          /* Set the start bit to start the operation which is bit number 16 */
+          SET_BIT(FLASH->CR,FLS_BIT_NUMBER_16);
+          /* Lock again the control register for security (LOCK bit in 31 position) */
+          SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
+          /* incerment the offest var. */
+          sector_offest++;
+          /* decrement the number of sectors by one */
+          g_number_of_sectors--;
+        }
+          /* Check that if the erase task is finished and the flash job result is pending  */
+        if( (g_number_of_sectors == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) )
+        {
+          /* reset the value of the variable for future use */
+          sector_offest = FLS_ZERO_VALUE;
+          /* IF the Dev error enable Check by reading the target address and it must equal to flash erase cell (0xFFFFFFFF)*/
+          g_Flash_Job_Result = MEMIF_JOB_OK;
+          g_Flash_Status = MEMIF_IDLE;
+          /* Call Job End notification Function in the configuration structure */
+          /*************************************/
+        }
+        break;
+      case COMPARE_OPERATION:
+        
+        break;
+      }
+  }
+#endif
+
+
+
+
 }

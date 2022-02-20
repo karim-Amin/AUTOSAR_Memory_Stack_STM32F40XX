@@ -127,11 +127,13 @@
 #define FLS_READ_PROTECTION_MASK        (0xFFFF00FF)
 #define FLS_ACR_MASK                    (0xFFFFFFF8)
 #define FLS_BOR_LEVEL_MASK              (0xFFFFFFF3)
+#define FLS_CR_SNB_MASK                 (0xFFFFFF87)
 #define FLS_UNLOCK_CR_KEY1              (0x45670123)
 #define FLS_UNLOCK_CR_KEY2              (0xCDEF89AB)
 #define FLS_UNLOCK_OPTION_CR_KEY1       (0x08192A3B)
 #define FLS_UNLOCK_OPTION_CR_KEY2       (0x4C5D6E7F)
 #define FLS_OPERATION_ZERO_LENGTH       (0U)
+#define FLS_ZERO_VALUE                  (0U)
 /******************************************************************************
  *                      API Service Id Macros                                 *
 *******************************************************************************/
@@ -169,10 +171,15 @@ typedef uint32          Fls_AddressType;
 typedef uint32          Fls_LengthType;
 /* Specifies the kind of operation to the flash module`s Main function */
 typedef enum{
+  /* When no operation is initiated */
   NO_OPERATION,
+  /* When read operation is initiated */
   READ_OPERATION,
+  /* When write operation is initiated */
   WRITE_OPERATION,
+  /* When erase operation is initiated */
   ERASE_OPERATION,
+  /* When compare operation is initiated */
   COMPARE_OPERATION
 }FLS_Kind_of_operation;
 /*******************************************************************************
