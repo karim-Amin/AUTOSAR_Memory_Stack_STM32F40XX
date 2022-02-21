@@ -55,13 +55,13 @@ STATIC uint8  g_number_of_sectors = 0;
  *                      Helper Functions  Definitions                         *
 *******************************************************************************/
 /*
- * Description : compares the content of  flash memory location  and flash erased cell (constant 0xFFFFFFFF).
- * Returns : TRUE -> if the content is equal to erased cell 
- *           FALSE -> if the content is not equal to erased cell 
+ * Description : compares the content of  flash memory location  and constant value passed as a parameter .
+ * Returns : TRUE -> if the content is equal to constant 
+ *           FALSE -> if the content is not equal to constant 
  */
-boolean Helper_verify_erase (Fls_AddressType* location_ptr)
+boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value)
 {
-  if(*location_ptr == FLS_ERASED_FLASH_CELL)
+  if(*location_ptr == compared_value)
   {
     return TRUE;
   }
@@ -447,7 +447,7 @@ Std_ReturnType Fls_Write(
 ********************************************************************************/
 Std_ReturnType Fls_Read(
                          Fls_AddressType SourceAdderss,
-                         const uint8* TargetAddressPtr,
+                         uint8* TargetAddressPtr,
                          Fls_LengthType  Length
                                                       )
 {
@@ -573,24 +573,24 @@ void Fls_MainFunction( void )
           }else{
             /* Do nothing */
           }
-          /* Do not end the cycle untill handling the max number of bytes */
-          while(processed_bytes < max_bytes){
-            /* Check the parallelism */
+          /* Check the parallelism */
             switch(g_Fls_config_ptr->fls_p_size)
             {
-              case x8_psize : 
-                
+              case x8_psize : const uint8* flash_access_ptr = g_;
                 break; 
-              case x16_psize : 
                 
+              case x16_psize : parallel_bytes = 2;
                 break; 
-              case x32_psize :
                 
+              case x32_psize : parallel_bytes = 4;
                 break; 
-              case x64_psize : 
                 
+              case x64_psize : parallel_bytes = 8;
                 break; 
             }
+          /* Do not end the cycle untill handling the max number of bytes */
+          while( (processed_bytes < max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
+            
           }
         break;
       case WRITE_OPERATION:
@@ -638,7 +638,7 @@ void Fls_MainFunction( void )
           /* IF the Dev error enable Check by reading the target address and it must equal to flash erased cell (0xFFFFFFFF)*/
 #if (FLS_DEV_ERROR_DETECT == STD_ON)
             /* Check if the content of the target address is not equal to erased flash cell*/
-            if(! Helper_verify_erase((Fls_AddressType*) g_TargetAdderss))
+            if(! Helper_verify((Fls_AddressType*) g_TargetAdderss ,FLS_ERASED_FLASH_CELL))
             {
               g_Flash_Job_Result = MEMIF_JOB_FAILED;
               /* Report dev error if the erase job failed  */

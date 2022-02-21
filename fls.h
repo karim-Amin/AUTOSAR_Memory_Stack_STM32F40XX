@@ -266,11 +266,11 @@ typedef struct{
  *                        Helper Functions Prototype                           *
 ********************************************************************************/
 /*
- * Description : compares the content of  flash memory location  and flash erased cell (constant 0xFFFFFFFF).
- * Returns : TRUE -> if the content is equal to erased cell 
- *           FALSE -> if the content is not equal to erased cell 
+ * Description : compares the content of  flash memory location  and constant value passed as a parameter .
+ * Returns : TRUE -> if the content is equal to constant 
+ *           FALSE -> if the content is not equal to constant 
  */
-boolean Helper_verify_erase (Fls_AddressType* location_ptr);
+boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value);
 
 /*******************************************************************************
  *                        AUTOSAR Function Prototype                           *
@@ -388,7 +388,7 @@ MemIf_JobResultType Fls_GetJobResult( void );
 ********************************************************************************/
 Std_ReturnType Fls_Read(
                          Fls_AddressType SourceAdderss,
-                         const uint8* TargetAddressPtr,
+                         uint8* TargetAddressPtr,
                          Fls_LengthType  Length
                                                       );
 /* Check if the user configured this api on or off*/
