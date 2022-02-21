@@ -28,23 +28,45 @@
 ******************************************************************************/
 /* To Be able to track the module status */
 STATIC MemIf_StatusType g_Flash_Status = MEMIF_UNINIT;
+
 /* To Be able to track the module Mode */
 STATIC MemIf_ModeType g_Flash_Mode;
+
 /* To Be able to track the result of initiated task  */
 STATIC MemIf_JobResultType g_Flash_Job_Result ;
+
 /* To Store the configuration set if wanted in run time */
 STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
+
 /* To make the main function Know the type of operation */
 FLS_Kind_of_operation g_Fls_operation_type = NO_OPERATION;
-/* To hold the data of the initiated task */
+
+/* module internal variables To hold the data of the initiated task */
 STATIC Fls_AddressType g_TargetAdderss;
 STATIC Fls_AddressType g_SourceAdderss;
 STATIC  const uint8* g_SourceAdderss_ptr;
 STATIC  const uint8* g_TargetAdderss_ptr;
 STATIC Fls_LengthType  g_Length;
+
 /* To Hold the first sector number and number of sectors which included in the operation*/
 STATIC uint8  g_First_Sector_number;
 STATIC uint8  g_number_of_sectors = 0;
+/******************************************************************************
+ *                      Helper Functions  Definitions                         *
+*******************************************************************************/
+/*
+ * Description : compares the content of  flash memory location  and flash erased cell (constant 0xFFFFFFFF).
+ * Returns : TRUE -> if the content is equal to erased cell 
+ *           FALSE -> if the content is not equal to erased cell 
+ */
+boolean Helper_verify_erase (Fls_AddressType* location_ptr)
+{
+  if(*location_ptr == FLS_ERASED_FLASH_CELL)
+  {
+    return TRUE;
+  }
+  return FALSE;
+}
 /******************************************************************************
  *                      API Service Definitions                               *
 ******************************************************************************/
@@ -526,6 +548,10 @@ void Fls_MainFunction( void )
   {
     /* this variable will be initialized once by to be add to the first sector number and used in erase task */
      STATIC uint8 sector_offest = FLS_ZERO_VALUE;
+    /* To hold the numer of processing bytes to compare with the max. */
+     Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
+    /* To hold the max number of bytes based on the module operation mode*/
+     Fls_LengthType max_bytes = FLS_ZERO_VALUE;
     /* Check To Know the Type of the Job */
     switch(g_Fls_operation_type)
     {
@@ -538,15 +564,34 @@ void Fls_MainFunction( void )
           /* Check the mode of operation based on it know the max data handled in one cycle */
           if(g_Fls_config_ptr->fls_default_mode == MEMIF_MODE_FAST)
           {
-            
+            max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
           }
           else if(g_Fls_config_ptr->fls_default_mode == MEMIF_MODE_SLOW)
           {
+            max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
             
           }else{
             /* Do nothing */
           }
-        
+          /* Do not end the cycle untill handling the max number of bytes */
+          while(processed_bytes < max_bytes){
+            /* Check the parallelism */
+            switch(g_Fls_config_ptr->fls_p_size)
+            {
+              case x8_psize : 
+                
+                break; 
+              case x16_psize : 
+                
+                break; 
+              case x32_psize :
+                
+                break; 
+              case x64_psize : 
+                
+                break; 
+            }
+          }
         break;
       case WRITE_OPERATION:
         
@@ -590,9 +635,21 @@ void Fls_MainFunction( void )
         {
           /* reset the value of the variable for future use */
           sector_offest = FLS_ZERO_VALUE;
-          /* IF the Dev error enable Check by reading the target address and it must equal to flash erase cell (0xFFFFFFFF)*/
-          g_Flash_Job_Result = MEMIF_JOB_OK;
-          g_Flash_Status = MEMIF_IDLE;
+          /* IF the Dev error enable Check by reading the target address and it must equal to flash erased cell (0xFFFFFFFF)*/
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
+            /* Check if the content of the target address is not equal to erased flash cell*/
+            if(! Helper_verify_erase((Fls_AddressType*) g_TargetAdderss))
+            {
+              g_Flash_Job_Result = MEMIF_JOB_FAILED;
+              /* Report dev error if the erase job failed  */
+              Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
+            }
+            else  
+#endif
+            {
+              g_Flash_Job_Result = MEMIF_JOB_OK;
+            }
+            g_Flash_Status = MEMIF_IDLE;
           /* Call Job End notification Function in the configuration structure */
           /*************************************/
         }

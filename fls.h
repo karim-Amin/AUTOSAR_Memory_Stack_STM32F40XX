@@ -132,6 +132,7 @@
 #define FLS_UNLOCK_CR_KEY2              (0xCDEF89AB)
 #define FLS_UNLOCK_OPTION_CR_KEY1       (0x08192A3B)
 #define FLS_UNLOCK_OPTION_CR_KEY2       (0x4C5D6E7F)
+#define FLS_ERASED_FLASH_CELL           (0xFFFFFFFF)
 #define FLS_OPERATION_ZERO_LENGTH       (0U)
 #define FLS_ZERO_VALUE                  (0U)
 /******************************************************************************
@@ -260,6 +261,19 @@ typedef struct{
 
 /*******************************************************************************
  *                        Function Prototype                                   *
+********************************************************************************/
+/*******************************************************************************
+ *                        Helper Functions Prototype                           *
+********************************************************************************/
+/*
+ * Description : compares the content of  flash memory location  and flash erased cell (constant 0xFFFFFFFF).
+ * Returns : TRUE -> if the content is equal to erased cell 
+ *           FALSE -> if the content is not equal to erased cell 
+ */
+boolean Helper_verify_erase (Fls_AddressType* location_ptr);
+
+/*******************************************************************************
+ *                        AUTOSAR Function Prototype                           *
 ********************************************************************************/
 /*******************************************************************************
 * Service Name: Fls_Init
