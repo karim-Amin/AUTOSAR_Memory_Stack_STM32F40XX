@@ -35,6 +35,9 @@ STATIC MemIf_ModeType g_Flash_Mode;
 /* To Be able to track the result of initiated task  */
 STATIC MemIf_JobResultType g_Flash_Job_Result ;
 
+/* To Hold the result of the last job in the flash module */
+STATIC MemIf_JobResultType g_Flash_Last_Job_Result ;
+
 /* To Store the configuration set if wanted in run time */
 STATIC const Fls_configType* g_Fls_config_ptr = NULL_PTR;
 
@@ -137,7 +140,12 @@ void Helper_Write_Task_cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
    {
      /* reset the offest variable */
      data_offest = FLS_ZERO_VALUE;
+     
      g_Flash_Job_Result = MEMIF_JOB_OK;
+     
+     /* Store the job Result After finishing the task */
+     g_Flash_Last_Job_Result = g_Flash_Job_Result;
+     
      g_Flash_Status = MEMIF_IDLE;
      /* Call Job End notification Function in the configuration structure */
      /*************************************/
@@ -665,6 +673,7 @@ void Fls_MainFunction( void )
            * the target buffer will be the address of the data buffer 
            */
           Helper_Write_Task_cycle((uint8*)(g_SourceAdderss + FLS_BASE_ADDRESS) , (uint8*)g_TargetAdderss_ptr);
+          
         break;
         
         /*      Write Task Handlesr     */
@@ -676,6 +685,10 @@ void Fls_MainFunction( void )
             if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
             {
               g_Flash_Job_Result = MEMIF_JOB_FAILED;
+              
+              /* Store the job Result After finishing the task */
+              g_Flash_Last_Job_Result = g_Flash_Job_Result;
+              
               /* Report dev error if the erase job failed  */
               Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
               /* exit the function */
@@ -705,6 +718,10 @@ void Fls_MainFunction( void )
             if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) , *(Fls_AddressType*)g_SourceAdderss_ptr))
             {
               g_Flash_Job_Result = MEMIF_JOB_FAILED;
+              
+              /* Store the job Result After finishing the task */
+              g_Flash_Last_Job_Result = g_Flash_Job_Result;
+              
               /* Report dev error if the erase job failed  */
               Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_WRITE_FAILED);
               /* exit the function */
@@ -772,6 +789,10 @@ void Fls_MainFunction( void )
               g_Flash_Job_Result = MEMIF_JOB_OK;
             }
             g_Flash_Status = MEMIF_IDLE;
+            
+            /* Store the job Result After finishing the task */
+            g_Flash_Last_Job_Result = g_Flash_Job_Result;
+            
           /* Call Job End notification Function in the configuration structure */
           /*************************************/
         }
@@ -782,6 +803,7 @@ void Fls_MainFunction( void )
       }
   }
 #endif
+  
 }
 
 /* Check if the user configured this api on or off*/
@@ -815,3 +837,98 @@ void Fls_GetVersionInfo( Std_VersionInfoType* versioninfoPtr )
 }
 
 #endif /* IF DET ENABLED */
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_GET_STATUS_API == STD_ON)
+/*******************************************************************************
+* Service Name: Fls_GetStatus
+* Sync/Async: Synchronous
+* Reentrancy: Reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: MemIf_StatusType
+* Description: returns the driver state
+********************************************************************************/
+MemIf_StatusType Fls_GetStatus( void )
+{
+  #if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_GET_STATUS_SID , FLS_E_UNINIT);
+    
+  }else{
+     /* Do nothing */   
+  }
+#endif
+  /* returns the module status */
+  return g_Flash_Status;
+}
+#endif /* IF DET ENABLED */
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_GET_JOB_RESULT_API == STD_ON)
+/*******************************************************************************
+* Service Name: Fls_GetJobResult
+* Sync/Async: Synchronous
+* Reentrancy: Reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: MemIf_JobResultType
+* Description: returns the Result of the last job 
+********************************************************************************/
+MemIf_JobResultType Fls_GetJobResult( void )
+{
+  #if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_GET_JOB_RESULT_SID , FLS_E_UNINIT);
+    
+  }else{
+     /* Do nothing */   
+  }
+#endif
+  /* returns the Last job result */
+  return g_Flash_Last_Job_Result;
+}
+#endif /* IF DET ENABLED */
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_SET_MODE_API == STD_ON)
+/*******************************************************************************
+* Service Name: Fls_SetMode
+* Sync/Async: Synchronous
+* Reentrancy: Non Reentrant
+* Parameters (in): Mode => MEMIF_MODE_SLOW: Slow read access / normal SPI access. 
+*                          MEMIF_MODE_FAST: Fast read access / SPI burst access. 
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: None
+* Description: returns the driver state
+********************************************************************************/
+void Fls_SetMode( MemIf_ModeType Mode)
+{
+  /* Check the development errors if enabled */
+  #if (FLS_DEV_ERROR_DETECT == STD_ON)
+  /* Check the flash module status */
+  if(g_Flash_Status == MEMIF_BUSY )
+  {
+     /* Report dev error if the flash module status */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_SET_MODE_SID , FLS_E_BUSY);
+  }else{
+    /* Do nothing */
+  }
+#endif
+  /* set the FLS module’s operation mode to the given “Mode” parameter*/
+  g_Flash_Mode = Mode;
+}
+#endif  
