@@ -274,6 +274,12 @@ typedef struct{
  *           FALSE -> if the content is not equal to constant 
  */
 boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value);
+/*
+ * Description : Writes the data From the source buffer to target buffer untill the max number of Bytes 
+ * Returns : None
+ *           
+ */
+void Helper_Write_Task_cycle(uint8* Source_Buffer , uint8* Taregt_Buffer);
 /*******************************************************************************
  *                        AUTOSAR Function Prototype                           *
 ********************************************************************************/
