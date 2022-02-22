@@ -665,7 +665,6 @@ void Fls_MainFunction( void )
            * the target buffer will be the address of the data buffer 
            */
           Helper_Write_Task_cycle((uint8*)(g_SourceAdderss + FLS_BASE_ADDRESS) , (uint8*)g_TargetAdderss_ptr);
-          
         break;
         
         /*      Write Task Handlesr     */
@@ -783,8 +782,36 @@ void Fls_MainFunction( void )
       }
   }
 #endif
-
-
-
-
 }
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_VERSION_INFO_API == STD_ON)
+/*******************************************************************************
+* Service Name: Fls_GetVersionInfo
+* Sync/Async: Synchronous
+* Reentrancy: Reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): versioninfoPtr => Pointer to where to store the version information of this module.
+* Return value: None
+* Description: Returns the version information of this module. 
+********************************************************************************/
+void Fls_GetVersionInfo( Std_VersionInfoType* versioninfoPtr )
+{
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
+  if(versioninfoPtr == NULL_PTR)
+  {
+    /* Report det error */
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_GET_VERSION_INFO_SID,FLS_E_PARAM_POINTER);
+  }else {
+    /* Do nothing */
+  }
+#endif
+  versioninfoPtr->moduleID = FLS_MODULE_ID;
+  versioninfoPtr->sw_major_version = FLS_SW_MAJOR_VERSION;
+  versioninfoPtr->sw_minor_version = FLS_SW_MINOR_VERSION;
+  versioninfoPtr->sw_patch_version = FLS_SW_PATCH_VERSION;
+  versioninfoPtr->vendorID = FLS_VENDOR_ID;
+}
+
+#endif /* IF DET ENABLED */
