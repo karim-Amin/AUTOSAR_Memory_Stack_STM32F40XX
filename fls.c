@@ -45,7 +45,7 @@ FLS_Kind_of_operation g_Fls_operation_type = NO_OPERATION;
 STATIC Fls_AddressType g_TargetAdderss;
 STATIC Fls_AddressType g_SourceAdderss;
 STATIC  const uint8* g_SourceAdderss_ptr;
-STATIC  const uint8* g_TargetAdderss_ptr;
+STATIC  uint8* g_TargetAdderss_ptr;
 STATIC Fls_LengthType  g_Length;
 
 /* To Hold the first sector number and number of sectors which included in the operation*/
@@ -548,10 +548,16 @@ void Fls_MainFunction( void )
   {
     /* this variable will be initialized once by to be add to the first sector number and used in erase task */
      STATIC uint8 sector_offest = FLS_ZERO_VALUE;
+     
     /* To hold the numer of processing bytes to compare with the max. */
      Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
+     
     /* To hold the max number of bytes based on the module operation mode*/
      Fls_LengthType max_bytes = FLS_ZERO_VALUE;
+     
+    /* To hold the offest number in the target data buffer and maintain its previous value */
+     STATIC uint32 data_offest = FLS_ZERO_VALUE;
+     
     /* Check To Know the Type of the Job */
     switch(g_Fls_operation_type)
     {
@@ -559,6 +565,7 @@ void Fls_MainFunction( void )
         
         break;
       case READ_OPERATION:
+        
           /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
           while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
           /* Check the mode of operation based on it know the max data handled in one cycle */
@@ -573,23 +580,66 @@ void Fls_MainFunction( void )
           }else{
             /* Do nothing */
           }
-          /* Check the parallelism */
-            switch(g_Fls_config_ptr->fls_p_size)
-            {
-              case x8_psize : const uint8* flash_access_ptr = g_;
-                break; 
-                
-              case x16_psize : parallel_bytes = 2;
-                break; 
-                
-              case x32_psize : parallel_bytes = 4;
-                break; 
-                
-              case x64_psize : parallel_bytes = 8;
-                break; 
-            }
           /* Do not end the cycle untill handling the max number of bytes */
           while( (processed_bytes < max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
+            
+            /* Check the parallelism */
+              switch(g_Fls_config_ptr->fls_p_size)
+              {
+                case x8_psize :
+                        /* cast the source address to pointer to char to access one byte */
+                        *(g_TargetAdderss_ptr + data_offest)  = *((uint8*)g_SourceAdderss + data_offest); 
+                         /* increment the number of bytes by one as i access one byte at a Time */
+                         processed_bytes++;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by one as i access one byte at a Time */
+                         g_Length--;
+                  break; 
+                  
+                case x16_psize : 
+                         /* cast the source address to pointer to short to access two bytes */
+                        *((uint16*)g_TargetAdderss_ptr + data_offest)  = *((uint16*)g_SourceAdderss + data_offest); 
+                         /* increment the number of bytes by two as i access two bytes at a Time */
+                         processed_bytes += 2;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by two as i access two bytes at a Time */
+                         g_Length -= 2;
+                  break; 
+                  
+                case x32_psize : 
+                         /* cast the source address to pointer to long to access four bytes */
+                        *((uint32*)g_TargetAdderss_ptr + data_offest)  = *((uint32*)g_SourceAdderss + data_offest); 
+                         /* increment the number of bytes by four as i access four bytes at a Time */
+                         processed_bytes += 4;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by four as i access four bytes at a Time */
+                         g_Length -= 4;
+                  break; 
+                  
+                case x64_psize : 
+                         /* cast the source address to pointer to long to access eight bytes */
+                        *((uint64*)g_TargetAdderss_ptr + data_offest)  = *((uint64*)g_SourceAdderss + data_offest); 
+                         /* increment the number of bytes by eight as i access eight bytes at a Time */
+                         processed_bytes += 8;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by eight as i access eight bytes at a Time */
+                         g_Length -= 8;
+                  break; 
+              }
+          }
+          /* Check if the read task is Finished */
+          if((g_Length == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING))
+          {
+            /* reset the offest variable */
+            data_offest = FLS_ZERO_VALUE;
+            g_Flash_Job_Result = MEMIF_JOB_OK;
+            g_Flash_Status = MEMIF_IDLE;
+          /* Call Job End notification Function in the configuration structure */
+          /*************************************/
             
           }
         break;
@@ -603,17 +653,19 @@ void Fls_MainFunction( void )
         {
           /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
           while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
+          
           /* UNLOCK the flash control register by put in the flash key register two magic numbers
            * 1=> KEY1 = 0x45670123
            * 2=> KEY2 = 0xCDEF89AB
            */
           FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
           FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
+          
           /* Select the sector number to erase */
           /* 
            * 1) clear the bits [6:3] which is SNB (sector number).
-           * 2) add first sector number to sector offest to get the sector number 
-           * 3) shift left by 3 as it is the start bit number of SNB bits
+           * 2) add first sector number to sector offest to get the sector number .
+           * 3) shift left by 3 as it is the start bit number of SNB bits .
            */
           FLASH->CR = (FLASH->CR & FLS_CR_SNB_MASK) | ((g_First_Sector_number + sector_offest) << FLS_BIT_NUMBER_3);
           
@@ -630,7 +682,7 @@ void Fls_MainFunction( void )
           /* decrement the number of sectors by one */
           g_number_of_sectors--;
         }
-          /* Check that if the erase task is finished and the flash job result is pending  */
+          /* Check that if the erase task is finished */
         if( (g_number_of_sectors == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) )
         {
           /* reset the value of the variable for future use */
@@ -638,7 +690,7 @@ void Fls_MainFunction( void )
           /* IF the Dev error enable Check by reading the target address and it must equal to flash erased cell (0xFFFFFFFF)*/
 #if (FLS_DEV_ERROR_DETECT == STD_ON)
             /* Check if the content of the target address is not equal to erased flash cell*/
-            if(! Helper_verify((Fls_AddressType*) g_TargetAdderss ,FLS_ERASED_FLASH_CELL))
+            if(! Helper_verify( (Fls_AddressType*) g_TargetAdderss ,FLS_ERASED_FLASH_CELL))
             {
               g_Flash_Job_Result = MEMIF_JOB_FAILED;
               /* Report dev error if the erase job failed  */
