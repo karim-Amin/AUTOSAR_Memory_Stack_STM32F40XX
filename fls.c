@@ -47,7 +47,8 @@ STATIC Fls_AddressType g_SourceAdderss;
 STATIC  const uint8* g_SourceAdderss_ptr;
 STATIC  uint8* g_TargetAdderss_ptr;
 STATIC Fls_LengthType  g_Length;
-
+/* To hold the max number of bytes based on the module operation mode*/
+ Fls_LengthType g_max_bytes = FLS_ZERO_VALUE;
 /* To Hold the first sector number and number of sectors which included in the operation*/
 STATIC uint8  g_First_Sector_number;
 STATIC uint8  g_number_of_sectors = 0;
@@ -211,6 +212,8 @@ void Fls_Init( const Fls_configType  * config_ptr){
   g_Flash_Status = MEMIF_IDLE;
   /* After finishing initialization set the flash job result to MEMIF_JOB_OK */
   g_Flash_Job_Result = MEMIF_JOB_OK ; 
+  /* Set the module mode */
+  g_Flash_Mode = config_ptr->fls_default_mode;
 }
 /*******************************************************************************
 * Service Name: Fls_Erase
@@ -427,6 +430,19 @@ Std_ReturnType Fls_Write(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to write task */
   g_Fls_operation_type = WRITE_OPERATION;
+  
+  /* Check the mode of operation based on it know the max data handled in one cycle */
+  if(g_Flash_Mode == MEMIF_MODE_FAST)
+    {
+      g_max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
+    }
+  else if(g_Flash_Mode == MEMIF_MODE_SLOW)
+    {
+      g_max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
+            
+    }else{
+     /* Do nothing */
+    }
   return E_OK;
 }
 
@@ -515,6 +531,18 @@ Std_ReturnType Fls_Read(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = READ_OPERATION;
+  /* Check the mode of operation based on it know the max data handled in one cycle */
+  if(g_Flash_Mode == MEMIF_MODE_FAST)
+    {
+      g_max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
+    }
+  else if(g_Flash_Mode == MEMIF_MODE_SLOW)
+    {
+      g_max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
+            
+    }else{
+     /* Do nothing */
+    }
   return E_OK;
 }
 /*******************************************************************************
@@ -552,8 +580,7 @@ void Fls_MainFunction( void )
     /* To hold the numer of processing bytes to compare with the max. */
      Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
      
-    /* To hold the max number of bytes based on the module operation mode*/
-     Fls_LengthType max_bytes = FLS_ZERO_VALUE;
+
      
     /* To hold the offest number in the target data buffer and maintain its previous value */
      STATIC uint32 data_offest = FLS_ZERO_VALUE;
@@ -564,25 +591,14 @@ void Fls_MainFunction( void )
       case NO_OPERATION:
         
         break;
+        /*      Read Task Handlesr     */
       case READ_OPERATION:
-        
-          /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
-          while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
-          /* Check the mode of operation based on it know the max data handled in one cycle */
-          if(g_Fls_config_ptr->fls_default_mode == MEMIF_MODE_FAST)
-          {
-            max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
-          }
-          else if(g_Fls_config_ptr->fls_default_mode == MEMIF_MODE_SLOW)
-          {
-            max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
-            
-          }else{
-            /* Do nothing */
-          }
+
           /* Do not end the cycle untill handling the max number of bytes */
-          while( (processed_bytes < max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
+          while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
             
+             /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
+             while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
             /* Check the parallelism */
               switch(g_Fls_config_ptr->fls_p_size)
               {
@@ -601,33 +617,33 @@ void Fls_MainFunction( void )
                          /* cast the source address to pointer to short to access two bytes */
                         *((uint16*)g_TargetAdderss_ptr + data_offest)  = *((uint16*)g_SourceAdderss + data_offest); 
                          /* increment the number of bytes by two as i access two bytes at a Time */
-                         processed_bytes += 2;
+                         processed_bytes += FLS_TWO_BYTES;
                          /* increment the data offest to get the next location */
                          data_offest++;
                          /* decrement the number of bytes by two as i access two bytes at a Time */
-                         g_Length -= 2;
+                         g_Length -= FLS_TWO_BYTES;
                   break; 
                   
                 case x32_psize : 
                          /* cast the source address to pointer to long to access four bytes */
                         *((uint32*)g_TargetAdderss_ptr + data_offest)  = *((uint32*)g_SourceAdderss + data_offest); 
                          /* increment the number of bytes by four as i access four bytes at a Time */
-                         processed_bytes += 4;
+                         processed_bytes += FLS_FOUR_BYTES;
                          /* increment the data offest to get the next location */
                          data_offest++;
                          /* decrement the number of bytes by four as i access four bytes at a Time */
-                         g_Length -= 4;
+                         g_Length -= FLS_FOUR_BYTES;
                   break; 
                   
                 case x64_psize : 
                          /* cast the source address to pointer to long to access eight bytes */
                         *((uint64*)g_TargetAdderss_ptr + data_offest)  = *((uint64*)g_SourceAdderss + data_offest); 
                          /* increment the number of bytes by eight as i access eight bytes at a Time */
-                         processed_bytes += 8;
+                         processed_bytes += FLS_EIGHT_BYTES;
                          /* increment the data offest to get the next location */
                          data_offest++;
                          /* decrement the number of bytes by eight as i access eight bytes at a Time */
-                         g_Length -= 8;
+                         g_Length -= FLS_EIGHT_BYTES;
                   break; 
               }
           }
@@ -640,12 +656,80 @@ void Fls_MainFunction( void )
             g_Flash_Status = MEMIF_IDLE;
           /* Call Job End notification Function in the configuration structure */
           /*************************************/
-            
           }
         break;
-      case WRITE_OPERATION:
         
+        /*      Write Task Handlesr     */
+      case WRITE_OPERATION:
+          /* UNLOCK the flash control register by put in the flash key register two magic numbers
+           * 1=> KEY1 = 0x45670123
+           * 2=> KEY2 = 0xCDEF89AB
+           */
+          FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
+          FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
+          
+          /* Set the PG BIT (program) in the flash control register which bit number 0 */
+          SET_BIT(FLASH->CR,FLS_BIT_NUMBER_0);
+          
+          /* Lock again the control register for security (LOCK bit in 31 position) */
+          SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
+          
+          /* Perform the data operations to desired Memory address */
+          /* Do not end the cycle untill handling the max number of bytes */
+          while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
+            
+             /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
+             while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
+              /* Check the parallelism */
+              switch(g_Fls_config_ptr->fls_p_size)
+              {
+                case x8_psize :
+                        /* cast the source address to pointer to char to access one byte */
+                        *((uint8*)g_TargetAdderss + data_offest)  = *(g_SourceAdderss_ptr + data_offest); 
+                         /* increment the number of bytes by one as i access one byte at a Time */
+                         processed_bytes++;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by one as i access one byte at a Time */
+                         g_Length--;
+                  break; 
+                  
+                case x16_psize : 
+                         /* cast the source address to pointer to short to access two bytes */
+                        *((uint16*)g_TargetAdderss + data_offest)  = *((uint16*)g_SourceAdderss_ptr + data_offest); 
+                         /* increment the number of bytes by two as i access two bytes at a Time */
+                         processed_bytes += FLS_TWO_BYTES;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by two as i access two bytes at a Time */
+                         g_Length -= FLS_TWO_BYTES;
+                  break; 
+                  
+                case x32_psize : 
+                         /* cast the source address to pointer to long to access four bytes */
+                        *((uint32*)g_TargetAdderss + data_offest)  = *((uint32*)g_SourceAdderss_ptr + data_offest); 
+                         /* increment the number of bytes by four as i access four bytes at a Time */
+                         processed_bytes += FLS_FOUR_BYTES;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by four as i access four bytes at a Time */
+                         g_Length -= FLS_FOUR_BYTES;
+                  break; 
+                  
+                case x64_psize : 
+                         /* cast the source address to pointer to long to access eight bytes */
+                        *((uint64*)g_TargetAdderss + data_offest)  = *((uint64*)g_SourceAdderss_ptr + data_offest); 
+                         /* increment the number of bytes by eight as i access eight bytes at a Time */
+                         processed_bytes += FLS_EIGHT_BYTES;
+                         /* increment the data offest to get the next location */
+                         data_offest++;
+                         /* decrement the number of bytes by eight as i access eight bytes at a Time */
+                         g_Length -= FLS_EIGHT_BYTES;
+                  break; 
+              }
+          }
         break;
+        /*      Erase Task Handlesr     */
       case ERASE_OPERATION:
           
         /* Check that there are sectors to erase */

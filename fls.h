@@ -135,6 +135,9 @@
 #define FLS_ERASED_FLASH_CELL           (0xFFFFFFFF)
 #define FLS_OPERATION_ZERO_LENGTH       (0U)
 #define FLS_ZERO_VALUE                  (0U)
+#define FLS_TWO_BYTES                   (2U)
+#define FLS_FOUR_BYTES                  (4U)
+#define FLS_EIGHT_BYTES                 (8U)
 /******************************************************************************
  *                      API Service Id Macros                                 *
 *******************************************************************************/
@@ -271,7 +274,6 @@ typedef struct{
  *           FALSE -> if the content is not equal to constant 
  */
 boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value);
-
 /*******************************************************************************
  *                        AUTOSAR Function Prototype                           *
 ********************************************************************************/
