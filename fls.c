@@ -47,14 +47,14 @@ FLS_Kind_of_operation g_Fls_operation_type = NO_OPERATION;
 /* module internal variables To hold the data of the initiated task */
 STATIC Fls_AddressType g_TargetAdderss;
 STATIC Fls_AddressType g_SourceAdderss;
-STATIC  const uint8* g_SourceAdderss_ptr;
-STATIC  uint8* g_TargetAdderss_ptr;
+STATIC  const uint8* g_SourceAdderss_ptr = NULL_PTR;
+STATIC  uint8* g_TargetAdderss_ptr = NULL_PTR;
 STATIC Fls_LengthType  g_Length;
 /* To hold the max number of bytes based on the module operation mode*/
  Fls_LengthType g_max_bytes = FLS_ZERO_VALUE;
 /* To Hold the first sector number and number of sectors which included in the operation*/
 STATIC uint8  g_First_Sector_number;
-STATIC uint8  g_number_of_sectors = 0;
+STATIC uint8  g_number_of_sectors = FLS_ZERO_VALUE;
 /******************************************************************************
  *                      Helper Functions  Definitions                         *
 *******************************************************************************/
@@ -797,6 +797,8 @@ void Fls_MainFunction( void )
           /*************************************/
         }
         break;
+        
+        /*  Compare Task */ 
       case COMPARE_OPERATION:
         
         break;
@@ -896,7 +898,7 @@ MemIf_JobResultType Fls_GetJobResult( void )
   }else{
      /* Do nothing */   
   }
-#endif
+  #endif
   /* returns the Last job result */
   return g_Flash_Last_Job_Result;
 }
@@ -931,4 +933,52 @@ void Fls_SetMode( MemIf_ModeType Mode)
   /* set the FLS module’s operation mode to the given “Mode” parameter*/
   g_Flash_Mode = Mode;
 }
-#endif  
+#endif  /* IF DET ENABLED */
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_CANCEL_API == STD_ON)
+/*******************************************************************************
+* Service Name: Fls_Cancel
+* Sync/Async: Synchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: None
+* Description: cancels an ongoing job 
+********************************************************************************/
+void Fls_Cancel( void )
+{
+   #if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_CANCEL_SID , FLS_E_UNINIT);
+    
+  }else{
+     /* Do nothing */   
+  }
+  #endif
+  /* Reset the internal job proccessing variables of the module */
+  g_number_of_sectors = FLS_ZERO_VALUE;
+  g_max_bytes = FLS_ZERO_VALUE;
+  g_Length = FLS_ZERO_VALUE;
+  /* reset the data pointers to null */
+  g_TargetAdderss_ptr = NULL_PTR;
+  g_SourceAdderss_ptr = NULL_PTR;
+  /* Set the module state to ideal */
+  g_Flash_Status = MEMIF_IDLE;
+  
+  /* set the job result to MEMIF_JOB_CANCELED if the job result currently has the value MEMIF_JOB_PENDING*/
+  if (g_Flash_Job_Result == MEMIF_JOB_PENDING)
+  {
+    g_Flash_Job_Result = MEMIF_JOB_CANCELLED;
+    g_Flash_Last_Job_Result = g_Flash_Job_Result;
+  }
+  
+  /* Call the error notification function */
+}
+#endif /* IF DET ENABLED */
