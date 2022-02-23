@@ -297,6 +297,18 @@ void Fls_Init( const Fls_configType  * config_ptr){
   g_Flash_Job_Result = MEMIF_JOB_OK ; 
   /* Set the module mode */
   g_Flash_Mode = config_ptr->fls_default_mode;
+  /* Check the mode of operation based on it know the max data handled in one cycle */
+  if(g_Flash_Mode == MEMIF_MODE_FAST)
+    {
+      g_max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
+    }
+  else if(g_Flash_Mode == MEMIF_MODE_SLOW)
+    {
+      g_max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
+            
+    }else{
+     /* Do nothing */
+    }
 }
 /*******************************************************************************
 * Service Name: Fls_Erase
@@ -513,19 +525,6 @@ Std_ReturnType Fls_Write(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to write task */
   g_Fls_operation_type = WRITE_OPERATION;
-  
-  /* Check the mode of operation based on it know the max data handled in one cycle */
-  if(g_Flash_Mode == MEMIF_MODE_FAST)
-    {
-      g_max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
-    }
-  else if(g_Flash_Mode == MEMIF_MODE_SLOW)
-    {
-      g_max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
-            
-    }else{
-     /* Do nothing */
-    }
   return E_OK;
 }
 
@@ -614,20 +613,102 @@ Std_ReturnType Fls_Read(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = READ_OPERATION;
-  /* Check the mode of operation based on it know the max data handled in one cycle */
-  if(g_Flash_Mode == MEMIF_MODE_FAST)
-    {
-      g_max_bytes = g_Fls_config_ptr->fls_max_read_fast_mode;
-    }
-  else if(g_Flash_Mode == MEMIF_MODE_SLOW)
-    {
-      g_max_bytes = g_Fls_config_ptr->fls_max_read_normal_mode;
-            
-    }else{
-     /* Do nothing */
-    }
   return E_OK;
 }
+
+/* Check if the user configured this api on or off*/
+#if ( FLS_COMPARE_API == STD_ON)
+/*******************************************************************************
+* Service Name: Fls_Compare
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): SourceAdderss => Source address in flash memory. This address offset will be added to the flash memory base address
+*                  TargetAddressPtr => Pointer to Target data buffer.
+*                  Length => Number of bytes to Read.
+*
+* Parameters (inout): None
+* Parameters (out): None
+*
+* Return value:  E_OK: read command has been accepted 
+*                E_NOT_OK: read command has not been accepted
+*
+* Description: Compares the contents of an area of flash memory with that of an application data buffer.
+********************************************************************************/
+Std_ReturnType Fls_Compare(
+                         Fls_AddressType SourceAdderss,
+                         const uint8* TargetAddressPtr,
+                         Fls_LengthType  Length
+                                                      )
+{
+ /* Check the development errors if enabled */
+#if (FLS_DEV_ERROR_DETECT == STD_ON)
+  
+  /* Check if the flash memory module is initialized or not */
+  if(g_Flash_Status == MEMIF_UNINIT)
+  {
+    /* Report dev error if the module is not initialized */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_COMPARE_SID , FLS_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+     /* Do nothing */   
+  }
+  
+  /* Check the flash module status */
+  if(g_Flash_Status == MEMIF_BUSY )
+  {
+     /* Report dev error if the flash module status */
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_COMPARE_SID , FLS_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + SourceAdderss)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + SourceAdderss)<= FLS_LAST_ADDRESS) ) )
+  {
+    /* Report dev error if the address is out of range */
+    
+    Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_COMPARE_SID , FLS_E_PARAM_ADDRESS);
+    return E_NOT_OK;
+  }else{
+    /* Do nothing */
+  }
+  
+  /* Check that the address plus the length lies within the specified lower and upper flash address boundaries */
+  if( !( ((FLS_BASE_ADDRESS + SourceAdderss + Length)>= FLS_BASE_ADDRESS) && ((FLS_BASE_ADDRESS + SourceAdderss)<= FLS_LAST_ADDRESS) && Length > FLS_OPERATION_ZERO_LENGTH) )
+  {
+    /* Report dev error if the address is out of range */
+    Det_ReportError( FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_COMPARE_SID , FLS_E_PARAM_LENGTH );
+    return E_NOT_OK;
+  }else{
+  /* Do nothing */
+  }
+  
+  /* Check if the data buffer pointer is being null pointer */
+  if( TargetAddressPtr == NULL_PTR )
+  {
+  /* Report dev error if the data buffer pointer is null */
+    
+    Det_ReportError(FLS_MODULE_ID,FLS_INSTANCE_ID,FLS_COMPARE_SID,FLS_E_PARAM_DATA);
+    return E_NOT_OK;
+  }else{
+  /* Do nothing */
+  }
+#endif
+  /* copy the given parameters to Fls module internal variables */
+  g_SourceAdderss = SourceAdderss;
+  g_TargetAdderss_ptr = (uint8*)TargetAddressPtr;
+  g_Length = Length;
+  /* Set the status of the module to Busy until it finishes */
+  g_Flash_Status = MEMIF_BUSY;
+  /* Set the job of the module to job pending */
+  g_Flash_Job_Result = MEMIF_JOB_PENDING;
+  /* Set the job Type to read task */
+  g_Fls_operation_type = COMPARE_OPERATION;
+  return E_OK;
+}
+#endif
+
 /*******************************************************************************
 * Service Name: Fls_MainFunction
 * Timing : Fixed_cyclic
@@ -678,6 +759,7 @@ void Fls_MainFunction( void )
         
         /*      Write Task Handlesr     */
       case WRITE_OPERATION:
+        
           /*  Before writing a flash block, shall compare the contents of the addressed memory area against the value of an erased flash cell to check that 
               the block has been completely erased. */
           #if (FLS_DEV_ERROR_DETECT == STD_ON)
@@ -724,6 +806,7 @@ void Fls_MainFunction( void )
               
               /* Report dev error if the erase job failed  */
               Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_WRITE_FAILED);
+              
               /* exit the function */
               return;
             }
