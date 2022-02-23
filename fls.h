@@ -268,18 +268,39 @@ typedef struct{
 /*******************************************************************************
  *                        Helper Functions Prototype                           *
 ********************************************************************************/
-/*
+
+/*******************************************************************************
+ * Description : Compares the contents of the source address and target data buffer  
+ * Returns : None  
+ *******************************************************************************/
+void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer);
+
+/*******************************************************************************
  * Description : compares the content of  flash memory location  and constant value passed as a parameter .
  * Returns : TRUE -> if the content is equal to constant 
  *           FALSE -> if the content is not equal to constant 
- */
+ *******************************************************************************/
 boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value);
-/*
+
+/*******************************************************************************
  * Description : Writes the data From the source buffer to target buffer untill the max number of Bytes 
  * Returns : None
  *           
- */
-void Helper_Write_Task_cycle(uint8* Source_Buffer , uint8* Taregt_Buffer);
+ ******************************************************************************/
+void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer);
+
+/*******************************************************************************
+ * Description : Reads the data From the source Address to target data buffer untill the max number of Bytes 
+ * Returns : None  
+ *******************************************************************************/
+void Helper_Read_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer);
+
+/*******************************************************************************
+ * Description : erases one sector from the flash memory  
+ * Returns : None          
+ *******************************************************************************/
+void Helper_Erase_Task_Cycle(void);
+
 /*******************************************************************************
  *                        AUTOSAR Function Prototype                           *
 ********************************************************************************/

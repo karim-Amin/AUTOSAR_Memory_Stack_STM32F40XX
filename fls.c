@@ -58,6 +58,61 @@ STATIC uint8  g_number_of_sectors = FLS_ZERO_VALUE;
 /******************************************************************************
  *                      Helper Functions  Definitions                         *
 *******************************************************************************/
+
+/*******************************************************************************
+ * Description : Compares the contents of the source address and target data buffer  
+ * Returns : None  
+ *******************************************************************************/
+void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
+{
+  /* To hold the numer of processing bytes to compare with the max. */
+  Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
+  /* To hold the offest number in the target data buffer and maintain its previous value */
+  STATIC uint32 data_offest = FLS_ZERO_VALUE;
+  /* this flag will be raised whenever Memory location not equal the location in the data buffer */
+  boolean Not_Equal_Flag = FALSE;
+  /* Do not end the cycle untill handling the max number of bytes */
+   while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
+     
+    if( *(Source_Buffer+data_offest) != *(Taregt_Buffer+data_offest))
+    {
+      /* Rias the Flag */
+      Not_Equal_Flag = TRUE;
+      break;
+    }
+    /* increment the number of bytes by four as i access four bytes at a Time */
+    processed_bytes += FLS_FOUR_BYTES;
+    /* increment the data offest to get the next location */
+    data_offest++;
+    /* decrement the number of bytes by four as i access four bytes at a Time */
+    g_Length -= FLS_FOUR_BYTES;
+   }
+   /* Check the flag */
+   if( Not_Equal_Flag == TRUE)
+   {
+     /* reset the offest variable */
+     data_offest = FLS_ZERO_VALUE;
+     /* Set the job Result to inconsistent */
+     g_Flash_Job_Result = MEMIF_BLOCK_INCONSISTENT;
+     g_Flash_Status = MEMIF_IDLE;
+     /* Store the job Result After finishing the task */
+     g_Flash_Last_Job_Result = g_Flash_Job_Result;
+   }
+   /* Check if the Compare Task is Finished */
+   if((g_Length == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) && (Not_Equal_Flag == FALSE) )
+   {
+     /* reset the offest variable */
+     data_offest = FLS_ZERO_VALUE;
+     g_Flash_Job_Result = MEMIF_JOB_OK;
+     g_Flash_Status = MEMIF_IDLE;
+     /* Store the job Result After finishing the task */
+     g_Flash_Last_Job_Result = g_Flash_Job_Result;
+     /* Call Job End notification Function in the configuration structure */
+     /*************************************/
+   }
+    
+}
+
 /*
  * Description : compares the content of  flash memory location  and constant value passed as a parameter .
  * Returns : TRUE -> if the content is equal to constant 
@@ -71,17 +126,162 @@ boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value)
   }
   return FALSE;
 }
+
 /*
- * Description : Writes the data From the source buffer to target buffer untill the max number of Bytes 
+ * Description : erases one sector from the flash memory  
  * Returns : None
  *           
  */
-void Helper_Write_Task_cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
+void Helper_Erase_Task_Cycle(void)
+{
+  /* this variable will be initialized once by to be add to the first sector number and used in erase task */
+  STATIC uint8 sector_offest = FLS_ZERO_VALUE;
+  /* Check that there are sectors to erase */
+  if(g_number_of_sectors != FLS_ZERO_VALUE)
+  {
+     /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
+     while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
+          
+     /* UNLOCK the flash control register by put in the flash key register two magic numbers
+      * 1=> KEY1 = 0x45670123
+      * 2=> KEY2 = 0xCDEF89AB
+      */
+     FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
+     FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
+       
+      /* Select the sector number to erase */
+      /* 
+       * 1) clear the bits [6:3] which is SNB (sector number).
+       * 2) add first sector number to sector offest to get the sector number .
+       * 3) shift left by 3 as it is the start bit number of SNB bits .
+       */
+      FLASH->CR = (FLASH->CR & FLS_CR_SNB_MASK) | ((g_First_Sector_number + sector_offest) << FLS_BIT_NUMBER_3);
+         
+      /* set the bit SER (sector erase ) which is bit number 1*/
+      SET_BIT(FLASH->CR,FLS_BIT_NUMBER_1);
+          
+      /* Set the start bit to start the operation which is bit number 16 */
+      SET_BIT(FLASH->CR,FLS_BIT_NUMBER_16);
+          
+      /* Lock again the control register for security (LOCK bit in 31 position) */
+      SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
+      /* incerment the offest var. */
+      sector_offest++;
+      /* decrement the number of sectors by one */
+      g_number_of_sectors--;
+   }
+      /* Check that if the erase task is finished */
+   if( (g_number_of_sectors == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) )
+   {
+      /* reset the value of the variable for future use */
+      sector_offest = FLS_ZERO_VALUE;
+      /* IF the Dev error enable Check by reading the target address and it must equal to flash erased cell (0xFFFFFFFF)*/
+      #if (FLS_DEV_ERROR_DETECT == STD_ON)
+        /* Check if the content of the target address is not equal to erased flash cell*/
+        if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
+        {
+           g_Flash_Job_Result = MEMIF_JOB_FAILED;
+           /* Report dev error if the erase job failed  */
+           Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
+           /* exit the function */
+           return;
+         }
+         else  
+      #endif
+         {
+           g_Flash_Job_Result = MEMIF_JOB_OK;
+         }
+           g_Flash_Status = MEMIF_IDLE;
+            
+           /* Store the job Result After finishing the task */
+           g_Flash_Last_Job_Result = g_Flash_Job_Result;
+            
+          /* Call Job End notification Function in the configuration structure */
+          /*************************************/
+        }
+  
+}
+
+/******************************************************************************************************
+ * Description : Reads the data From the source Address to target data buffer untill the max number of Bytes 
+ * Returns : None  
+ ******************************************************************************************************/
+void Helper_Read_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
 {
   /* To hold the numer of processing bytes to compare with the max. */
   Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
   /* To hold the offest number in the target data buffer and maintain its previous value */
   STATIC uint32 data_offest = FLS_ZERO_VALUE;
+  /* Do not end the cycle untill handling the max number of bytes */
+   while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
+    
+        /* cast the source address to pointer to long to access four bytes */
+         *((uint32*)Taregt_Buffer + data_offest)  = *((uint32*)Source_Buffer + data_offest); 
+        /* increment the number of bytes by four as i access four bytes at a Time */
+         processed_bytes += FLS_FOUR_BYTES;
+        /* increment the data offest to get the next location */
+         data_offest++;
+        /* decrement the number of bytes by four as i access four bytes at a Time */
+         g_Length -= FLS_FOUR_BYTES;
+   }
+   /* Check if the Read Task is Finished */
+   if((g_Length == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) )
+   {
+     /* reset the offest variable */
+     data_offest = FLS_ZERO_VALUE;
+     g_Flash_Job_Result = MEMIF_JOB_OK;
+     g_Flash_Status = MEMIF_IDLE;
+     /* Store the job Result After finishing the task */
+     g_Flash_Last_Job_Result = g_Flash_Job_Result;
+     /* Call Job End notification Function in the configuration structure */
+     /*************************************/
+   }
+  
+}
+
+/*
+ * Description : Writes the data From the source buffer to target buffer untill the max number of Bytes 
+ * Returns : None
+ *           
+ */
+void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
+{
+  /* To hold the numer of processing bytes to compare with the max. */
+  Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
+  /* To hold the offest number in the target data buffer and maintain its previous value */
+  STATIC uint32 data_offest = FLS_ZERO_VALUE;
+  
+  /*  Before writing a flash block, shall compare the contents of the addressed memory area against 
+      the value of an erased flash cell to check that the block has been completely erased. */
+   #if (FLS_DEV_ERROR_DETECT == STD_ON)
+      /* Check if the content of the target address is not equal to erased flash cell*/
+      if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
+      {
+          g_Flash_Job_Result = MEMIF_JOB_FAILED;
+              
+          /* Store the job Result After finishing the task */
+          g_Flash_Last_Job_Result = g_Flash_Job_Result;
+              
+          /* Report dev error if the erase job failed  */
+          Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
+          /* exit the function */
+          return;
+       }
+    #endif
+      
+    /* UNLOCK the flash control register by put in the flash key register two magic numbers
+     * 1=> KEY1 = 0x45670123
+     * 2=> KEY2 = 0xCDEF89AB
+     */
+    FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
+    FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
+          
+    /* Set the PG BIT (program) in the flash control register which bit number 0 */
+    SET_BIT(FLASH->CR,FLS_BIT_NUMBER_0);
+          
+    /* Lock again the control register for security (LOCK bit in 31 position) */
+    SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
+    
   /* Do not end the cycle untill handling the max number of bytes */
    while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
      
@@ -140,15 +340,33 @@ void Helper_Write_Task_cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
    {
      /* reset the offest variable */
      data_offest = FLS_ZERO_VALUE;
-     
-     g_Flash_Job_Result = MEMIF_JOB_OK;
-     
-     /* Store the job Result After finishing the task */
-     g_Flash_Last_Job_Result = g_Flash_Job_Result;
-     
+    
      g_Flash_Status = MEMIF_IDLE;
      /* Call Job End notification Function in the configuration structure */
      /*************************************/
+     
+     /* After writing a flash block, compare the contents of the reprogrammed memory area against 
+        the contents of the provided application buffer to check that the block has been completely reprogrammed*/
+     #if (FLS_DEV_ERROR_DETECT == STD_ON)      
+        /* Check if the content of the target address is equal to Reprogrammed buffer */
+        if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) , *(Fls_AddressType*)g_SourceAdderss_ptr))
+        {
+              g_Flash_Job_Result = MEMIF_JOB_FAILED;
+              
+              /* Report dev error if the erase job failed  */
+              Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_WRITE_FAILED);
+              
+              /* exit the function */
+              return;
+         }
+        else
+      #endif
+        {
+            g_Flash_Job_Result = MEMIF_JOB_OK;
+ 
+        }
+        /* Store the job Result After finishing the task */
+        g_Flash_Last_Job_Result = g_Flash_Job_Result;
    }
 }
 /******************************************************************************
@@ -738,9 +956,6 @@ void Fls_MainFunction( void )
   /* Check The job result before execute the function if the job is pending -> execute */
   if( g_Flash_Job_Result == MEMIF_JOB_PENDING )
   {
-    /* this variable will be initialized once by to be add to the first sector number and used in erase task */
-     STATIC uint8 sector_offest = FLS_ZERO_VALUE;
-   
     /* Check To Know the Type of the Job */
     switch(g_Fls_operation_type)
     {
@@ -753,137 +968,22 @@ void Fls_MainFunction( void )
            * the source buffer will be the falsh address -> Source address
            * the target buffer will be the address of the data buffer 
            */
-          Helper_Write_Task_cycle((uint8*)(g_SourceAdderss + FLS_BASE_ADDRESS) , (uint8*)g_TargetAdderss_ptr);
-          
+          Helper_Read_Task_Cycle((uint32*)(g_SourceAdderss + FLS_BASE_ADDRESS),(uint32*)g_TargetAdderss_ptr);
         break;
-        
-        /*      Write Task Handlesr     */
+          /*      Write Task Handlesr     */
       case WRITE_OPERATION:
-        
-          /*  Before writing a flash block, shall compare the contents of the addressed memory area against the value of an erased flash cell to check that 
-              the block has been completely erased. */
-          #if (FLS_DEV_ERROR_DETECT == STD_ON)
-          /* Check if the content of the target address is not equal to erased flash cell*/
-            if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
-            {
-              g_Flash_Job_Result = MEMIF_JOB_FAILED;
-              
-              /* Store the job Result After finishing the task */
-              g_Flash_Last_Job_Result = g_Flash_Job_Result;
-              
-              /* Report dev error if the erase job failed  */
-              Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
-              /* exit the function */
-              return;
-            }
-          #endif
-          /* UNLOCK the flash control register by put in the flash key register two magic numbers
-           * 1=> KEY1 = 0x45670123
-           * 2=> KEY2 = 0xCDEF89AB
-           */
-          FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
-          FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
-          
-          /* Set the PG BIT (program) in the flash control register which bit number 0 */
-          SET_BIT(FLASH->CR,FLS_BIT_NUMBER_0);
-          
-          /* Lock again the control register for security (LOCK bit in 31 position) */
-          SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
-          
           /* Perform the data operations to desired Memory address */
-          Helper_Write_Task_cycle((uint8*)g_SourceAdderss_ptr,(uint8*)(g_TargetAdderss + FLS_BASE_ADDRESS));
-          
-          /* After writing a flash block, compare the contents of the reprogrammed memory area
-            against the contents of the provided application buffer to check that the block has been completely reprogrammed*/
-          #if (FLS_DEV_ERROR_DETECT == STD_ON)      
-          /* Check if the content of the target address is equal to Reprogrammed buffer */
-            if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) , *(Fls_AddressType*)g_SourceAdderss_ptr))
-            {
-              g_Flash_Job_Result = MEMIF_JOB_FAILED;
-              
-              /* Store the job Result After finishing the task */
-              g_Flash_Last_Job_Result = g_Flash_Job_Result;
-              
-              /* Report dev error if the erase job failed  */
-              Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_WRITE_FAILED);
-              
-              /* exit the function */
-              return;
-            }
-          #endif
-          
+          Helper_Write_Task_Cycle((uint8*)g_SourceAdderss_ptr,(uint8*)(g_TargetAdderss + FLS_BASE_ADDRESS));
         break;
-        /*      Erase Task Handlesr     */
+          /*      Erase Task Handlesr     */
       case ERASE_OPERATION:
-          
-        /* Check that there are sectors to erase */
-        if(g_number_of_sectors != FLS_ZERO_VALUE)
-        {
-          /* check if the flash module not busy By Check the bit number 16 (BSY BIT) in the status register */
-          while(BIT_IS_SET(FLASH->SR , FLS_BIT_NUMBER_16));
-          
-          /* UNLOCK the flash control register by put in the flash key register two magic numbers
-           * 1=> KEY1 = 0x45670123
-           * 2=> KEY2 = 0xCDEF89AB
-           */
-          FLASH->KEYR = FLS_UNLOCK_CR_KEY1;
-          FLASH->KEYR = FLS_UNLOCK_CR_KEY2;
-          
-          /* Select the sector number to erase */
-          /* 
-           * 1) clear the bits [6:3] which is SNB (sector number).
-           * 2) add first sector number to sector offest to get the sector number .
-           * 3) shift left by 3 as it is the start bit number of SNB bits .
-           */
-          FLASH->CR = (FLASH->CR & FLS_CR_SNB_MASK) | ((g_First_Sector_number + sector_offest) << FLS_BIT_NUMBER_3);
-          
-          /* set the bit SER (sector erase ) which is bit number 1*/
-          SET_BIT(FLASH->CR,FLS_BIT_NUMBER_1);
-          
-          /* Set the start bit to start the operation which is bit number 16 */
-          SET_BIT(FLASH->CR,FLS_BIT_NUMBER_16);
-          
-          /* Lock again the control register for security (LOCK bit in 31 position) */
-          SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
-          /* incerment the offest var. */
-          sector_offest++;
-          /* decrement the number of sectors by one */
-          g_number_of_sectors--;
-        }
-          /* Check that if the erase task is finished */
-        if( (g_number_of_sectors == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) )
-        {
-          /* reset the value of the variable for future use */
-          sector_offest = FLS_ZERO_VALUE;
-          /* IF the Dev error enable Check by reading the target address and it must equal to flash erased cell (0xFFFFFFFF)*/
-          #if (FLS_DEV_ERROR_DETECT == STD_ON)
-            /* Check if the content of the target address is not equal to erased flash cell*/
-            if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
-            {
-              g_Flash_Job_Result = MEMIF_JOB_FAILED;
-              /* Report dev error if the erase job failed  */
-              Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
-              /* exit the function */
-              return;
-            }
-            else  
-          #endif
-            {
-              g_Flash_Job_Result = MEMIF_JOB_OK;
-            }
-            g_Flash_Status = MEMIF_IDLE;
-            
-            /* Store the job Result After finishing the task */
-            g_Flash_Last_Job_Result = g_Flash_Job_Result;
-            
-          /* Call Job End notification Function in the configuration structure */
-          /*************************************/
-        }
+          /* Perform one sector erase per cycle */
+          Helper_Erase_Task_Cycle();
         break;
         
-        /*  Compare Task */ 
+          /*  Compare Task */ 
       case COMPARE_OPERATION:
-        
+          Helper_Compare_Task_Cycle( (uint32*)g_SourceAdderss, (uint32*)g_TargetAdderss_ptr);
         break;
       }
   }
