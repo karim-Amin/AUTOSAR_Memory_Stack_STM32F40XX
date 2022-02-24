@@ -97,6 +97,8 @@ void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
      g_Flash_Status = MEMIF_IDLE;
      /* Store the job Result After finishing the task */
      g_Flash_Last_Job_Result = g_Flash_Job_Result;
+     /* Call Error End notification Function in the configuration structure */
+     g_Fls_config_ptr->Fee_JobErrorNotification_ptr();
    }
    /* Check if the Compare Task is Finished */
    if((g_Length == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) && (Not_Equal_Flag == FALSE) )
@@ -108,7 +110,7 @@ void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
      /* Store the job Result After finishing the task */
      g_Flash_Last_Job_Result = g_Flash_Job_Result;
      /* Call Job End notification Function in the configuration structure */
-     /*************************************/
+     g_Fls_config_ptr->Fee_JobEndNotification_ptr();
    }
     
 }
@@ -181,6 +183,8 @@ void Helper_Erase_Task_Cycle(void)
         if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
         {
            g_Flash_Job_Result = MEMIF_JOB_FAILED;
+           /* Call Error End notification Function in the configuration structure */
+           g_Fls_config_ptr->Fee_JobErrorNotification_ptr();
            /* Report dev error if the erase job failed  */
            Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
            /* exit the function */
@@ -197,7 +201,7 @@ void Helper_Erase_Task_Cycle(void)
            g_Flash_Last_Job_Result = g_Flash_Job_Result;
             
           /* Call Job End notification Function in the configuration structure */
-          /*************************************/
+          g_Fls_config_ptr->Fee_JobEndNotification_ptr();
         }
   
 }
@@ -234,7 +238,7 @@ void Helper_Read_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
      /* Store the job Result After finishing the task */
      g_Flash_Last_Job_Result = g_Flash_Job_Result;
      /* Call Job End notification Function in the configuration structure */
-     /*************************************/
+     g_Fls_config_ptr->Fee_JobEndNotification_ptr();
    }
   
 }
@@ -255,13 +259,15 @@ void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
       the value of an erased flash cell to check that the block has been completely erased. */
    #if (FLS_DEV_ERROR_DETECT == STD_ON)
       /* Check if the content of the target address is not equal to erased flash cell*/
-      if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) ,FLS_ERASED_FLASH_CELL))
+      if(! Helper_verify(  (Fls_AddressType*)(g_TargetAdderss + FLS_BASE_ADDRESS ) + data_offest ,FLS_ERASED_FLASH_CELL))
       {
           g_Flash_Job_Result = MEMIF_JOB_FAILED;
-              
+          /* Call Error End notification Function in the configuration structure */
+          g_Fls_config_ptr->Fee_JobErrorNotification_ptr();
           /* Store the job Result After finishing the task */
           g_Flash_Last_Job_Result = g_Flash_Job_Result;
-              
+          
+          
           /* Report dev error if the erase job failed  */
           Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_ERASE_FAILED);
           /* exit the function */
@@ -342,8 +348,6 @@ void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
      data_offest = FLS_ZERO_VALUE;
     
      g_Flash_Status = MEMIF_IDLE;
-     /* Call Job End notification Function in the configuration structure */
-     /*************************************/
      
      /* After writing a flash block, compare the contents of the reprogrammed memory area against 
         the contents of the provided application buffer to check that the block has been completely reprogrammed*/
@@ -352,7 +356,8 @@ void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
         if(! Helper_verify( (Fls_AddressType*) (g_TargetAdderss + FLS_BASE_ADDRESS) , *(Fls_AddressType*)g_SourceAdderss_ptr))
         {
               g_Flash_Job_Result = MEMIF_JOB_FAILED;
-              
+              /* Call Error End notification Function in the configuration structure */
+              g_Fls_config_ptr->Fee_JobErrorNotification_ptr();
               /* Report dev error if the erase job failed  */
               Det_ReportError(FLS_MODULE_ID , FLS_INSTANCE_ID , FLS_MAIN_FUNCTION_SID , FLS_E_VERIFY_WRITE_FAILED);
               
@@ -367,6 +372,9 @@ void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
         }
         /* Store the job Result After finishing the task */
         g_Flash_Last_Job_Result = g_Flash_Job_Result;
+        /* Call Job End notification Function in the configuration structure */
+        g_Fls_config_ptr->Fee_JobEndNotification_ptr();
+        
    }
 }
 /******************************************************************************
@@ -1160,8 +1168,10 @@ void Fls_Cancel( void )
   {
     g_Flash_Job_Result = MEMIF_JOB_CANCELLED;
     g_Flash_Last_Job_Result = g_Flash_Job_Result;
+    
   }
   
-  /* Call the error notification function */
+  /* Call Error End notification Function in the configuration structure */
+    g_Fls_config_ptr->Fee_JobErrorNotification_ptr();
 }
 #endif /* IF DET ENABLED */

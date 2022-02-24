@@ -11,13 +11,13 @@
 #ifndef FLS_H
 #define FLS_H
 /* my company id */
-#define FLS_VENDOR_ID          (2000U)
+#define FLS_VENDOR_ID                  (2000U)
 
 /* the FLS driver id in software module doc*/
-#define FLS_MODULE_ID          (92U)
+#define FLS_MODULE_ID                  (92U)
 
 /* FLS Instance Id */
-#define FLS_INSTANCE_ID  (0U)
+#define FLS_INSTANCE_ID                (0U)
 
 /*
  * Module Version 1.0.0
@@ -260,6 +260,9 @@ typedef struct{
   boolean               fls_data_cache_enable;
   boolean               fls_instruction_cache_enable;
   boolean               fls_prefetch_enable;
+  /* Pointer to call back notification functions  */
+  void (*Fee_JobEndNotification_ptr)(void);
+  void (*Fee_JobErrorNotification_ptr)(void);
 }Fls_configType;
 
 /*******************************************************************************
@@ -490,5 +493,5 @@ void Fls_GetVersionInfo( Std_VersionInfoType* versioninfoPtr );
 void Fls_MainFunction( void );
 
 /* Extern PB structures to be used by fls and other modules */
-extern const Fls_configType  fls_configuration;
+extern const  Fls_configType  fls_configuration;
 #endif /* FLS_H */

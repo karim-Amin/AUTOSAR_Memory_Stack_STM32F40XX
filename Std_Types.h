@@ -15,7 +15,6 @@
 
 #include "Platform_Types.h"
 #include "Compiler.h"
-
 /* Id for the company in the AUTOSAR
  * for example Karim's ID = 2000 :) */
 #define STD_TYPES_VENDOR_ID                                  (2000U)
