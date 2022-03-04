@@ -624,18 +624,15 @@ Std_ReturnType Fls_Erase(
       /* add the size of the sector to the base address (sector5 -> sector11 = 128 Kbytes)*/
     case FLS_SECTOR5:
     case FLS_SECTOR6:
-    case FLS_SECTOR7:
-    case FLS_SECTOR8:
-    case FLS_SECTOR9:
-    case FLS_SECTOR10:
-    case FLS_SECTOR11: next_start_add += FLS_SECTOR5_SIZE;
+    case FLS_SECTOR7: next_start_add += FLS_SECTOR5_SIZE;
+ 
       break;
     }
   }
   /* make a loop to know the frist sector to erase and the number of sectors */
   for( iterator = 0;iterator < FLS_NUM_OF_SECTORS;iterator++ ){
     /* Check if it is not the last sector */
-    if(iterator != FLS_SECTOR11){
+    if(iterator != FLS_SECTOR7){
       /* Check if the Target address within the sector range */
       if( ((TargetAdderss + FLS_BASE_ADDRESS) >= sectors_start_adresses[iterator])\
          &&((TargetAdderss + FLS_BASE_ADDRESS)< sectors_start_adresses[iterator + 1]))
@@ -648,7 +645,7 @@ Std_ReturnType Fls_Erase(
     }
     else{
       /* Store the sector number */
-        g_First_Sector_number = FLS_SECTOR11;
+        g_First_Sector_number = FLS_SECTOR7;
     }
   }
   /* To Know how many sectors will be erased */
