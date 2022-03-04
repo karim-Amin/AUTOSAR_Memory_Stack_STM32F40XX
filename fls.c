@@ -23,6 +23,12 @@
 #endif
 
 #endif
+
+/* Disable IRQ Interrupts ... This Macro disables IRQ interrupts by setting the I-bit in the PRIMASK. */
+#define Disable_Interrupts()   __asm("CPSID I");
+
+/* Enable IRQ Interrupts ... This Macro enables IRQ interrupts by clearing the I-bit in the PRIMASK. */
+#define Enable_Interrupts()    __asm("CPSIE I")
 /******************************************************************************
  *                      Private Global variable                               *
 ******************************************************************************/
@@ -537,6 +543,8 @@ void Fls_Init( const Fls_configType  * config_ptr){
     }else{
      /* Do nothing */
     }
+  /* Exit the critical section */
+  Enable_Interrupts();
 }
 /*******************************************************************************
 * Service Name: Fls_Erase
@@ -599,6 +607,8 @@ Std_ReturnType Fls_Erase(
   }
   
 #endif
+  /* To enter the critical section */
+  Disable_Interrupts();
   /* Copy the method parameters to initiate erase job */
   g_TargetAdderss = TargetAdderss;
   g_Length = Length;
@@ -664,6 +674,8 @@ Std_ReturnType Fls_Erase(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to erase task */
   g_Fls_operation_type = ERASE_OPERATION;
+   /* Exit the critical section */
+  Enable_Interrupts();
   return E_OK;
 }
 
@@ -740,6 +752,8 @@ Std_ReturnType Fls_Write(
   /* Do nothing */
   }
 #endif
+  /* To enter the critical section */
+  Disable_Interrupts();
   /* copy the given parameters to Fls module internal variables */
   g_TargetAdderss = TargetAdderss;
   g_SourceAdderss_ptr = SourceAddressPtr;
@@ -750,6 +764,8 @@ Std_ReturnType Fls_Write(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to write task */
   g_Fls_operation_type = WRITE_OPERATION;
+  /* Exit the critical section */
+  Enable_Interrupts();
   return E_OK;
 }
 
@@ -828,6 +844,8 @@ Std_ReturnType Fls_Read(
   /* Do nothing */
   }
 #endif
+  /* To enter the critical section */
+  Disable_Interrupts();
   /* copy the given parameters to Fls module internal variables */
   g_SourceAdderss = SourceAdderss;
   g_TargetAdderss_ptr = TargetAddressPtr;
@@ -838,6 +856,8 @@ Std_ReturnType Fls_Read(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = READ_OPERATION;
+   /* Exit the critical section */
+  Enable_Interrupts();
   return E_OK;
 }
 
@@ -920,6 +940,8 @@ Std_ReturnType Fls_Compare(
   /* Do nothing */
   }
 #endif
+  /* To enter the critical section */
+  Disable_Interrupts();
   /* copy the given parameters to Fls module internal variables */
   g_SourceAdderss = SourceAdderss;
   g_TargetAdderss_ptr = (uint8*)TargetAddressPtr;
@@ -930,6 +952,8 @@ Std_ReturnType Fls_Compare(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = COMPARE_OPERATION;
+  /* To enter the critical section */
+  Disable_Interrupts();
   return E_OK;
 }
 #endif
