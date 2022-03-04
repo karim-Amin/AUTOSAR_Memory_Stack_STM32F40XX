@@ -43,7 +43,7 @@
  * Include the standard AUTOSAR types std_types.h file
  */
 #include "Std_Types.h"
-
+#include "Cpu.h"
 /*
  * check that the two files from the same software version and AUTOSAR verion
  */

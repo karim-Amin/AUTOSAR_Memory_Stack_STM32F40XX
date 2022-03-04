@@ -515,6 +515,8 @@ void Fls_Init( const Fls_configType  * config_ptr){
   while(BIT_IS_SET(FLASH->SR,FLS_BIT_NUMBER_16));
   /* lock the option control register for security by setting OPTION LOCK BIT which is bit number zero */
   SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_0);
+  /* To enter the critical section */
+  Disable_Interrupts();
   /* Get the flash memory Mode ( Fast or slow )*/
   g_Flash_Mode = config_ptr->fls_default_mode ;
   /* After finishing initialization set the flash status  to MEMIF_IDLE */
