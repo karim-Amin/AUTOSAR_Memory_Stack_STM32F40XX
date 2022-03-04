@@ -40,10 +40,6 @@
 #define FLS_SECTOR5_SIZE                     (131072U)
 #define FLS_SECTOR6_SIZE                     (131072U)
 #define FLS_SECTOR7_SIZE                     (131072U)
-#define FLS_SECTOR8_SIZE                     (131072U)
-#define FLS_SECTOR9_SIZE                     (131072U)
-#define FLS_SECTOR10_SIZE                    (131072U)
-#define FLS_SECTOR11_SIZE                    (131072U)
 /******************************************************************************/
 /******************************************************************************
  *                 Sectors identifiers for flash module                       *
@@ -56,10 +52,6 @@
 #define FLS_SECTOR5                     (5U)
 #define FLS_SECTOR6                     (6U)
 #define FLS_SECTOR7                     (7U)
-#define FLS_SECTOR8                     (8U)
-#define FLS_SECTOR9                     (9U)
-#define FLS_SECTOR10                    (10U)
-#define FLS_SECTOR11                    (11U)
 /******************************************************************************/
 /* Pre-compile option for Development Error Detect */
 #define FLS_DEV_ERROR_DETECT                 (STD_ON)
@@ -101,12 +93,12 @@
 #define FLS_AC_WRITE                         (Fls_AddressType)(0x0)
    
 /* Total size of flash memory 1MB (1024 KB =>  (1024 * 1024)  Bytes  ) */
-#define FLS_TOTAL_SIZE                       (Fls_AddressType)(1048576U) 
+#define FLS_TOTAL_SIZE                       (Fls_AddressType)(524288U) 
    
 /*  */
-#define FLS_NUM_OF_SECTORS                   (12U)    
+#define FLS_NUM_OF_SECTORS                   (8U)    
 
 /* Flash Memory Driver Index */
 #define FLS_DRIVER_INDEX                     (0U)
   
-#endif FLS_CFG_H   
+#endif /*  FLS_CFG_H   */
