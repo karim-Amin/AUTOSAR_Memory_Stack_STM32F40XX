@@ -72,7 +72,7 @@
 /*
  * Containers and configuration parameters
  */
-typedef void (*Fee_JobEndCallbackFunctionType)(void);	/** @req FEE098 */
+typedef void (*Fee_JobEndCallbackFunctionType)(void);	
 typedef void (*Fee_JobErrorCallbackFunctionType)(void);
 
 typedef struct {
@@ -98,6 +98,7 @@ typedef struct {
 /*******************************************************************************
  *                        Functions ProtoType                                  *
 ********************************************************************************/
+STATIC uint16 Get_Block_Idx_From_Block_Number(uint16 block_num);
 /*******************************************************************************
 * Service Name: Fee_MainFunction
 * Timing : ON_PRE_CONDITION 

@@ -69,7 +69,7 @@ STATIC uint8  g_number_of_sectors = FLS_ZERO_VALUE;
  * Description : Compares the contents of the source address and target data buffer  
  * Returns : None  
  *******************************************************************************/
-void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
+STATIC void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
 {
   /* To hold the numer of processing bytes to compare with the max. */
   Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
@@ -126,7 +126,7 @@ void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
  * Returns : TRUE -> if the content is equal to constant 
  *           FALSE -> if the content is not equal to constant 
  */
-boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value)
+STATIC boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value)
 {
   if(*location_ptr == compared_value)
   {
@@ -140,7 +140,7 @@ boolean Helper_verify (Fls_AddressType* location_ptr , uint32 compared_value)
  * Returns : None
  *           
  */
-void Helper_Erase_Task_Cycle(void)
+STATIC void Helper_Erase_Task_Cycle(void)
 {
   /* this variable will be initialized once by to be add to the first sector number and used in erase task */
   STATIC uint8 sector_offest = FLS_ZERO_VALUE;
@@ -216,7 +216,7 @@ void Helper_Erase_Task_Cycle(void)
  * Description : Reads the data From the source Address to target data buffer untill the max number of Bytes 
  * Returns : None  
  ******************************************************************************************************/
-void Helper_Read_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
+STATIC void Helper_Read_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
 {
   /* To hold the numer of processing bytes to compare with the max. */
   Fls_LengthType processed_bytes = FLS_ZERO_VALUE;
@@ -254,7 +254,7 @@ void Helper_Read_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
  * Returns : None
  *           
  */
-void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
+STATIC void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
 {
   /* To hold the numer of processing bytes to compare with the max. */
   Fls_LengthType processed_bytes = FLS_ZERO_VALUE;

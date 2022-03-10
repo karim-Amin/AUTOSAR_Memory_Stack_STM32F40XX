@@ -28,6 +28,7 @@
 #define FEE_BLOCK_IMAGE1_NUM                     4097
 #define FEE_BLOCK_IMAGE2_NUM                     8194
 
+
 #define FEE_BLOCK_BOOT_MANAGER_SIZE              (32768U)
 #define FEE_BLOCK_IMAGE1_SIZE                    (32768U)
 #define FEE_BLOCK_IMAGE2_SIZE                    (32768U)

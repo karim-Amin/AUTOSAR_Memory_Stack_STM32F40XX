@@ -22,11 +22,13 @@ typedef enum {
 	FEE_IDLE,
         
 	FEE_READ, 
+        FEE_READ_WAIT, // wait data read done
 
 	FEE_WRITE,
-	
+	FEE_WRITE_WAIT, // wait data write done
+        
 	FEE_ERASE_BANK, // request bank erase
-	
+	FEE_ERASE_BANK_WAIT, // wait bank erase done
 
 } CurrentJobStateType;
 
@@ -84,6 +86,22 @@ STATIC MemIf_JobResultType 	JobResult = MEMIF_JOB_OK;
 STATIC CurrentJobStateType      CurrentJobStatus = FEE_UNINITIALIZED;
 STATIC PendingJobType           PendingJob = NO_JOB;
 STATIC CurrentJobType 		CurrentJob;
+
+/******************************************************************************
+ *                      Helper Functions  Definitions                         *
+*******************************************************************************/
+STATIC uint16 Get_Block_Idx_From_Block_Number(uint16 block_num)
+{
+  uint16 block_Idx;
+  for(uint8 count = 0;count<FEE_NUM_OF_BLOCKS;count++)
+  {
+    if(Fee_Config.BlockConfig[count].BlockNumber == block_num)
+    {
+      block_Idx = count;
+    }
+  }
+  return block_Idx;
+}
 /*******************************************************************************
 * Service Name: Fee_Init
 * Sync/Async: ASynchronous
@@ -105,7 +123,7 @@ void Fee_Init(void)
  /* To Hold the prevous value of the counter */
  uint8 prev ;
  /* Set the first start address to the address of the first bank */
- BlockStartAddress[0] = FLS_BASE_ADDRESS + BankProp[0].Start;
+ BlockStartAddress[0] =  BankProp[0].Start;
  for(count = 1 ; count<FEE_NUM_OF_BLOCKS ;count++)
  {
    prev = count -1 ;
@@ -151,3 +169,107 @@ void Fee_SetMode(MemIf_ModeType mode)
   }
   
 }
+
+
+/*******************************************************************************
+* Service Name: Fee_Read
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in):  blockNumber  -> Number of logical block, also denoting start address of that block in flash memory.
+                    blockOffset -> Read address offset inside the block                   
+                    Length -> Number of bytes to read 
+* Parameters (inout): None
+* Parameters (out): dataBufferPtr -> pointer to data buffer to store the read data
+* Return value:  E_OK: The requested job has been accepted by the module.  
+*                E_NOT_OK:  The requested job has not been accepted by the module.
+* Description: Service to initiate the read job
+********************************************************************************/
+Std_ReturnType Fee_Read(
+                        uint16 blockNumber,
+                        uint16 blockOffset,
+                        uint8* dataBufferPtr,
+                        uint16 length)
+{
+    /* Check the development error */
+#if (FEE_DEV_ERROR_DETECT == STD_ON)
+  if(ModuleStatus == MEMIF_UNINIT)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_READ_ID,FEE_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+    /* Do Nothing */
+  }
+   if(ModuleStatus == MEMIF_BUSY)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_READ_ID,FEE_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do Nothing */
+  }
+  boolean block_number_valid_flag = FALSE;
+   boolean bolck_offest_valid_flag = FALSE;
+   uint8 Index;
+   uint16 size;
+  /* check that the block nuber is valid */
+  for(uint8 i=0 ;i<FEE_NUM_OF_BLOCKS;i++)
+  {
+    if(blockNumber == Fee_Config.BlockConfig[i].BlockNumber)
+    {
+      block_number_valid_flag = TRUE;
+      Index = i;
+      size = Fee_Config.BlockConfig[i].BlockSize;
+      if(blockOffset < Fee_Config.BlockConfig[i].BlockSize){
+        bolck_offest_valid_flag = TRUE;
+      }
+    }
+  }
+  if( block_number_valid_flag == FALSE)
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_READ_ID,FEE_E_INVALID_BLOCK_NO);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+ if( bolck_offest_valid_flag == FALSE)
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_READ_ID,FEE_E_INVALID_BLOCK_OFS);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+  if( dataBufferPtr == NULL_PTR)
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_READ_ID,FEE_E_INVALID_DATA_PTR);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+  /* Check that the length is valid */
+  if( (length + blockOffset) > (size + BlockStartAddress[Index]) )
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_READ_ID,FEE_E_INVALID_BLOCK_LEN);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+#endif
+  /* Accept the read operation if the staus is idle*/
+  if(ModuleStatus == MEMIF_IDLE)
+  {
+    uint16 block_idx = Get_Block_Idx_From_Block_Number(blockNumber);
+    /* Get the start address for this block */
+    Fls_AddressType block_startAddress = BlockStartAddress[block_idx];
+    ModuleStatus = MEMIF_BUSY;
+    JobResult = MEMIF_JOB_PENDING;
+    CurrentJobStatus = FEE_READ;
+    PendingJob = PENDING_READ_JOB;
+    CurrentJob.Read.BlockIdx = block_idx;
+    CurrentJob.Read.DataOffset = blockOffset;
+    CurrentJob.Read.DataPtr = dataBufferPtr;
+    CurrentJob.Read.Length = length;
+    /* Trigger fls_read Task */
+    Fls_Read((block_startAddress + blockOffset),dataBufferPtr,length);
+  }
+  return E_OK;
+}
+
