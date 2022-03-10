@@ -80,7 +80,7 @@ void Helper_Compare_Task_Cycle(uint32* Source_Buffer , uint32* Taregt_Buffer)
   /* Do not end the cycle untill handling the max number of bytes */
    while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
      
-    if( *(Source_Buffer+data_offest) != *(Taregt_Buffer+data_offest))
+    if( *( Source_Buffer + data_offest) != *(Taregt_Buffer + data_offest))
     {
       /* Rias the Flag */
       Not_Equal_Flag = TRUE;
@@ -607,40 +607,13 @@ Std_ReturnType Fls_Erase(
   }
   
 #endif
-  /* To enter the critical section */
-  Disable_Interrupts();
+ 
   /* Copy the method parameters to initiate erase job */
   g_TargetAdderss = TargetAdderss;
   g_Length = Length;
   /* iterator for the for loop which is looping untill the number of sectors */
   uint8 iterator;
-  /* to hold the next start address of the sector */
-  Fls_AddressType next_start_add = FLS_BASE_ADDRESS;
-  /* declare the start address of each Sector */
-  Fls_AddressType sectors_start_adresses[FLS_NUM_OF_SECTORS] ;
   
-  for(iterator = 0; iterator < FLS_NUM_OF_SECTORS ; iterator++)
-  {
-    sectors_start_adresses[iterator] = next_start_add;
-
-    switch(iterator){
-      /* add the size of the sector to the base address (sector0 -> sector3 = 16 Kbytes)*/
-    case FLS_SECTOR0:
-    case FLS_SECTOR1:
-    case FLS_SECTOR2:
-    case FLS_SECTOR3: next_start_add += FLS_SECTOR0_SIZE;
-      break;
-      /* add the size of the sector to the base address ( sector4 = 16 Kbytes)*/
-    case FLS_SECTOR4: next_start_add += FLS_SECTOR4_SIZE;
-      break;
-      /* add the size of the sector to the base address (sector5 -> sector11 = 128 Kbytes)*/
-    case FLS_SECTOR5:
-    case FLS_SECTOR6:
-    case FLS_SECTOR7: next_start_add += FLS_SECTOR5_SIZE;
- 
-      break;
-    }
-  }
   /* make a loop to know the frist sector to erase and the number of sectors */
   for( iterator = 0;iterator < FLS_NUM_OF_SECTORS;iterator++ ){
     /* Check if it is not the last sector */
@@ -674,8 +647,7 @@ Std_ReturnType Fls_Erase(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to erase task */
   g_Fls_operation_type = ERASE_OPERATION;
-   /* Exit the critical section */
-  Enable_Interrupts();
+
   return E_OK;
 }
 
@@ -952,8 +924,8 @@ Std_ReturnType Fls_Compare(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = COMPARE_OPERATION;
-  /* To enter the critical section */
-  Disable_Interrupts();
+   /* Exit the critical section */
+  Enable_Interrupts();
   return E_OK;
 }
 #endif
@@ -1014,7 +986,7 @@ void Fls_MainFunction( void )
         
           /*  Compare Task */ 
       case COMPARE_OPERATION:
-          Helper_Compare_Task_Cycle( (uint32*)g_SourceAdderss, (uint32*)g_TargetAdderss_ptr);
+          Helper_Compare_Task_Cycle( (uint32*)(g_SourceAdderss + FLS_BASE_ADDRESS), (uint32*)g_TargetAdderss_ptr);
         break;
       }
   }

@@ -43,7 +43,7 @@
  * Include the standard AUTOSAR types std_types.h file
  */
 #include "Std_Types.h"
-#include "Cpu.h"
+
 /*
  * check that the two files from the same software version and AUTOSAR verion
  */
@@ -494,4 +494,5 @@ void Fls_MainFunction( void );
 
 /* Extern PB structures to be used by fls and other modules */
 extern const  Fls_configType  fls_configuration;
+extern const Fls_AddressType sectors_start_adresses[FLS_NUM_OF_SECTORS];
 #endif /* FLS_H */
