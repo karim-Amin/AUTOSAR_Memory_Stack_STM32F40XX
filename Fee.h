@@ -98,7 +98,7 @@ typedef struct {
 /*******************************************************************************
  *                        Functions ProtoType                                  *
 ********************************************************************************/
-STATIC uint16 Get_Block_Idx_From_Block_Number(uint16 block_num);
+STATIC sint16 Get_Block_Idx_From_Block_Number(uint16 block_num);
 /*******************************************************************************
 * Service Name: Fee_MainFunction
 * Timing : ON_PRE_CONDITION 
@@ -157,7 +157,9 @@ Std_ReturnType Fee_Read(
 *                E_NOT_OK:  The requested job has not been accepted by the module.
 * Description: Service to initiate the Write job
 ********************************************************************************/
-Std_ReturnType Fee_Write(uint16 blockNumber, uint8* dataBufferPtr); 
+Std_ReturnType Fee_Write(
+                         uint16 blockNumber,
+                         uint8* dataBufferPtr); 
 /*******************************************************************************
 * Service Name: Fee_Cancel
 * Sync/Async: Synchronous

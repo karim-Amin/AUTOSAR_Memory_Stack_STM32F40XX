@@ -55,9 +55,8 @@ typedef union {
 		uint16      	        DataOffset; // read data offset
 	} Read;
 	struct {
-		uint8* DataPtr; // write ram buffer ptr
+		uint8*                  DataPtr; // write ram buffer ptr
 		uint16			BlockIdx; // write block index
-		uint8			Invalidate; // invalidate flag
 	}Write;
         
         struct{
@@ -90,17 +89,17 @@ STATIC CurrentJobType 		CurrentJob;
 /******************************************************************************
  *                      Helper Functions  Definitions                         *
 *******************************************************************************/
-STATIC uint16 Get_Block_Idx_From_Block_Number(uint16 block_num)
+STATIC sint16 Get_Block_Idx_From_Block_Number(uint16 block_num)
 {
-  uint16 block_Idx;
+
   for(uint8 count = 0;count<FEE_NUM_OF_BLOCKS;count++)
   {
     if(Fee_Config.BlockConfig[count].BlockNumber == block_num)
     {
-      block_Idx = count;
+     return count;
     }
   }
-  return block_Idx;
+  return -1;
 }
 /*******************************************************************************
 * Service Name: Fee_Init
@@ -273,3 +272,70 @@ Std_ReturnType Fee_Read(
   return E_OK;
 }
 
+/*******************************************************************************
+* Service Name: Fee_Write
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in):  blockNumber  -> Number of logical block, also denoting start address of that block in flash memory.
+                    dataBufferPtr -> pointer to data buffer to store the read data
+* Parameters (inout): None
+* Parameters (out): None
+* Return value:  E_OK: The requested job has been accepted by the module.  
+*                E_NOT_OK:  The requested job has not been accepted by the module.
+* Description: Service to initiate the Write job
+********************************************************************************/
+Std_ReturnType Fee_Write(
+                         uint16 blockNumber,
+                         uint8* dataBufferPtr)
+{
+    /* Check the development error */
+#if (FEE_DEV_ERROR_DETECT == STD_ON)
+  if(ModuleStatus == MEMIF_UNINIT)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_WRITE_ID,FEE_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+    /* Do Nothing */
+  }
+   if(ModuleStatus == MEMIF_BUSY)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_WRITE_ID,FEE_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do Nothing */
+  }
+  
+  if( Get_Block_Idx_From_Block_Number(blockNumber) == -1 )
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_WRITE_ID,FEE_E_INVALID_BLOCK_NO);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+  if( dataBufferPtr == NULL_PTR)
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_WRITE_ID,FEE_E_INVALID_DATA_PTR);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+ 
+#endif
+  
+   /* Accept the Write operation if the staus is idle*/
+  if(ModuleStatus == MEMIF_IDLE)
+  {
+    uint16 block_idx = Get_Block_Idx_From_Block_Number(blockNumber);
+    /* Get the start address for this block */
+    Fls_AddressType block_startAddress = BlockStartAddress[block_idx];
+    ModuleStatus = MEMIF_BUSY;
+    JobResult = MEMIF_JOB_PENDING;
+    CurrentJobStatus = FEE_WRITE;
+    PendingJob = PENDING_WRITE_JOB;
+    CurrentJob.Write.BlockIdx= block_idx;
+    CurrentJob.Write.DataPtr = dataBufferPtr;
+    /* Trigger fls_write Task */
+    Fls_Write(BlockStartAddress[block_idx],dataBufferPtr,Fee_Config.BlockConfig[block_idx].BlockSize);
+  }
+  return E_OK;
+}
