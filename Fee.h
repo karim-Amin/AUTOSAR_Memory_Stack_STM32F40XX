@@ -12,6 +12,7 @@
 #define FEE_H_
 
 #define FEE_MODULE_ID			21
+#define FEE_INSTANCE_ID                 0
 #define FEE_VENDOR_ID			1000
 
 #define FEE_SW_MAJOR_VERSION	1
@@ -23,7 +24,6 @@
 
 #include "Std_Types.h"
 #include "Fee_Cfg.h"
-#include "fls.h"
 
 #if (FEE_DEV_ERROR_DETECT == STD_ON)
  // Error codes reported by this module defined by AUTOSAR
@@ -68,11 +68,12 @@
 /*******************************************************************************
  *                        Types Definitions                                    *
 ********************************************************************************/
-#include "Std_Types.h"
 
 /*
  * Containers and configuration parameters
  */
+typedef void (*Fee_JobEndCallbackFunctionType)(void);	/** @req FEE098 */
+typedef void (*Fee_JobErrorCallbackFunctionType)(void);
 
 typedef struct {
 	Fee_JobEndCallbackFunctionType		NvmJobEndCallbackNotificationCallback;
@@ -97,7 +98,11 @@ typedef struct {
 /*******************************************************************************
  *                        Functions ProtoType                                  *
 ********************************************************************************/
-
+/*******************************************************************************
+* Service Name: Fee_MainFunction
+* Timing : ON_PRE_CONDITION 
+* Description: Service to handle the requested read / write / erase jobs and the internal management operations.
+********************************************************************************/
 void Fee_MainFunction(void);	
 /*******************************************************************************
 * Service Name: Fee_Init

@@ -15,24 +15,24 @@ const Fee_BlockConfigType BlockConfigList[] = {
 
     {    /* Boot Manager */
         .DeviceIndex = FEE_INDEX,
-        .BlockNumber = FEE_BLOCK_NUM_BOOT_MANAGER,
-        .BlockSize = FEE_BLOCK_SIZE_BOOT_MANAGER,
+        .BlockNumber = FEE_BLOCK_BOOT_MANAGER_NUM,
+        .BlockSize = FEE_BLOCK_BOOT_MANAGER_SIZE,
         .ImmediateData = FALSE,
         .NumberOfWriteCycles = 0xFFFFFFFF
     },
 
     {    /* Image1  */
         .DeviceIndex = FEE_INDEX,
-        .BlockNumber = FEE_BLOCK_NUM_IMAGE1,
-        .BlockSize = FEE_BLOCK_SIZE_IMAGE1,
+        .BlockNumber = FEE_BLOCK_IMAGE1_NUM,
+        .BlockSize = FEE_BLOCK_IMAGE1_SIZE,
         .ImmediateData = FALSE,
         .NumberOfWriteCycles = 0xFFFFFFFF
     },
     
      {    /* Image2  */
         .DeviceIndex = FEE_INDEX,
-        .BlockNumber = FEE_BLOCK_NUM_IMAGE2,
-        .BlockSize = FEE_BLOCK_SIZE_IMAGE2,
+        .BlockNumber = FEE_BLOCK_IMAGE2_NUM,
+        .BlockSize = FEE_BLOCK_IMAGE2_SIZE,
         .ImmediateData = FALSE,
         .NumberOfWriteCycles = 0xFFFFFFFF
     },

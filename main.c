@@ -1,4 +1,4 @@
-#include "fls.h"
+#include "Fee.h"
 #include "Fee_Cbk.h"
 const uint8 data_buffer[] = {0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xBB,0xBB,0xBB,0xBB,0xBB,0xBB,
           
@@ -6,22 +6,7 @@ const uint8 data_buffer[] = {0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0
 uint8 read_data[32];
 int main(void)
 { 
-  Fls_Init(&fls_configuration);
-  Fls_Write((Fls_AddressType)0x62df0,(const uint8*)data_buffer,32);
-  uint8 i=0;
-  while(i<3)
-  {
-    Fls_MainFunction();
-    i++;
-  }
- // Fls_Erase((Fls_AddressType)0xC000,16);
- // Fls_MainFunction();
- // Fls_Compare((Fls_AddressType)0x62df0,data_buffer,32);
-while(1)
-{
-  Fls_MainFunction();
-}
-
+ Fee_Init();
 }
 
 void Fee_JobEndNotification(void)
