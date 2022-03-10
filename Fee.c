@@ -335,7 +335,42 @@ Std_ReturnType Fee_Write(
     CurrentJob.Write.BlockIdx= block_idx;
     CurrentJob.Write.DataPtr = dataBufferPtr;
     /* Trigger fls_write Task */
-    Fls_Write(BlockStartAddress[block_idx],dataBufferPtr,Fee_Config.BlockConfig[block_idx].BlockSize);
+    Fls_Write(block_startAddress,dataBufferPtr,Fee_Config.BlockConfig[block_idx].BlockSize);
   }
   return E_OK;
 }
+
+/*******************************************************************************
+* Service Name: Fee_Cancel
+* Sync/Async: Synchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): None
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: None
+* Description: Service to call the cancel function of the underlying flash driver.
+********************************************************************************/
+void Fee_Cancel(void)
+{
+    /* Check the development error */
+#if (FEE_DEV_ERROR_DETECT == STD_ON)
+  if(ModuleStatus == MEMIF_UNINIT)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_CANCEL_ID,FEE_E_UNINIT);
+    return ;
+  }else{
+    /* Do Nothing */
+  }
+#endif
+  
+  if(ModuleStatus == MEMIF_BUSY)
+  {
+     /* Initialize the internal variables */
+    ModuleStatus = MEMIF_IDLE;
+    /* Set the current job to FEE IDLE */
+   CurrentJobStatus = FEE_IDLE;
+   Fls_Cancel();
+  }
+}
+
+

@@ -202,7 +202,7 @@ MemIf_StatusType Fee_GetStatus(void);
 ********************************************************************************/
 MemIf_JobResultType Fee_GetJobResult(void);	
 /*******************************************************************************
-* Service Name: Fee_GetJobResult
+* Service Name: Fee_InvalidateBlock
 * Sync/Async: ASynchronous
 * Reentrancy: Non-reentrant
 * Parameters (in): blockNumber -> Number of logical block, also denoting start address of that block in flash memory 
