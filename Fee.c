@@ -27,8 +27,10 @@ typedef enum {
 	FEE_WRITE,
 	FEE_WRITE_WAIT, // wait data write done
         
-	FEE_ERASE_BANK, // request bank erase
-	FEE_ERASE_BANK_WAIT, // wait bank erase done
+        
+        
+	FEE_ERASE, // request bank erase
+	FEE_ERASE_WAIT, // wait bank erase done
 
 } CurrentJobStateType;
 
@@ -373,4 +375,59 @@ void Fee_Cancel(void)
   }
 }
 
-
+/*******************************************************************************
+* Service Name: Fee_InvalidateBlock
+* Sync/Async: ASynchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): blockNumber -> Number of logical block, also denoting start address of that block in flash memory 
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: Std_ReturnType :   E_OK: The requested job has been accepted by the module.  
+*                                  E_NOT_OK:  The requested job has not been accepted by the module.
+*
+* Description: Service to invalidate a logical block.  
+********************************************************************************/
+Std_ReturnType Fee_InvalidateBlock(uint16 blockNumber)
+{
+   /* Check the development error */
+#if (FEE_DEV_ERROR_DETECT == STD_ON)
+  if(ModuleStatus == MEMIF_UNINIT)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_INVALIDATE_BLOCK_ID,FEE_E_UNINIT);
+    return E_NOT_OK;
+  }else{
+    /* Do Nothing */
+  }
+   if(ModuleStatus == MEMIF_BUSY)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_INVALIDATE_BLOCK_ID,FEE_E_BUSY);
+    return E_NOT_OK;
+  }else{
+    /* Do Nothing */
+  }
+   if( Get_Block_Idx_From_Block_Number(blockNumber) == -1 )
+  {
+     Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_INVALIDATE_BLOCK_ID,FEE_E_INVALID_BLOCK_NO);
+    return E_NOT_OK;
+  }else {
+    /* Do Nothing */
+  }
+#endif 
+  if(ModuleStatus == MEMIF_IDLE)
+  {
+    /* To Invalidate the block initiate erase operation */
+    uint16 block_idx = Get_Block_Idx_From_Block_Number(blockNumber);
+    /* Get the start address for this block */
+    Fls_AddressType block_startAddress = BlockStartAddress[block_idx];
+    ModuleStatus = MEMIF_BUSY;
+    JobResult = MEMIF_JOB_PENDING;
+    CurrentJobStatus = FEE_ERASE;
+    PendingJob = PENDING_ERASE_JOB;
+    CurrentJob.Erase.BlockIdx=block_idx;
+    /* Trigger fls_Erase Task */
+    Fls_Erase(block_startAddress,Fee_Config.BlockConfig[block_idx].BlockSize);
+    return E_OK;
+  }else{
+    return E_NOT_OK;
+  }
+}
