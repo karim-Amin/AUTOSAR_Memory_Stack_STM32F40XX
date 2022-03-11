@@ -521,8 +521,7 @@ void Fls_Init( const Fls_configType  * config_ptr){
   while(BIT_IS_SET(FLASH->SR,FLS_BIT_NUMBER_16));
   /* lock the option control register for security by setting OPTION LOCK BIT which is bit number zero */
   SET_BIT(FLASH->OPTCR,FLS_BIT_NUMBER_0);
-  /* To enter the critical section */
-  Disable_Interrupts();
+
   /* Get the flash memory Mode ( Fast or slow )*/
   g_Flash_Mode = config_ptr->fls_default_mode ;
   /* After finishing initialization set the flash status  to MEMIF_IDLE */
@@ -543,8 +542,7 @@ void Fls_Init( const Fls_configType  * config_ptr){
     }else{
      /* Do nothing */
     }
-  /* Exit the critical section */
-  Enable_Interrupts();
+
 }
 /*******************************************************************************
 * Service Name: Fls_Erase
@@ -724,8 +722,7 @@ Std_ReturnType Fls_Write(
   /* Do nothing */
   }
 #endif
-  /* To enter the critical section */
-  Disable_Interrupts();
+
   /* copy the given parameters to Fls module internal variables */
   g_TargetAdderss = TargetAdderss;
   g_SourceAdderss_ptr = SourceAddressPtr;
@@ -736,8 +733,7 @@ Std_ReturnType Fls_Write(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to write task */
   g_Fls_operation_type = WRITE_OPERATION;
-  /* Exit the critical section */
-  Enable_Interrupts();
+
   return E_OK;
 }
 
@@ -816,8 +812,7 @@ Std_ReturnType Fls_Read(
   /* Do nothing */
   }
 #endif
-  /* To enter the critical section */
-  Disable_Interrupts();
+
   /* copy the given parameters to Fls module internal variables */
   g_SourceAdderss = SourceAdderss;
   g_TargetAdderss_ptr = TargetAddressPtr;
@@ -828,8 +823,7 @@ Std_ReturnType Fls_Read(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = READ_OPERATION;
-   /* Exit the critical section */
-  Enable_Interrupts();
+ 
   return E_OK;
 }
 
@@ -912,8 +906,7 @@ Std_ReturnType Fls_Compare(
   /* Do nothing */
   }
 #endif
-  /* To enter the critical section */
-  Disable_Interrupts();
+ 
   /* copy the given parameters to Fls module internal variables */
   g_SourceAdderss = SourceAdderss;
   g_TargetAdderss_ptr = (uint8*)TargetAddressPtr;
@@ -924,8 +917,7 @@ Std_ReturnType Fls_Compare(
   g_Flash_Job_Result = MEMIF_JOB_PENDING;
   /* Set the job Type to read task */
   g_Fls_operation_type = COMPARE_OPERATION;
-   /* Exit the critical section */
-  Enable_Interrupts();
+  
   return E_OK;
 }
 #endif
