@@ -497,6 +497,7 @@ void Fee_Cancel(void)
     ModuleStatus = MEMIF_IDLE;
     /* Set the current job to FEE IDLE */
    CurrentJobStatus = FEE_IDLE;
+   JobResult =  MEMIF_JOB_CANCELLED;
    Fls_Cancel();
   }
 }
@@ -585,7 +586,16 @@ MemIf_StatusType Fee_GetStatus(void)
 ********************************************************************************/
 MemIf_JobResultType Fee_GetJobResult(void)
 {
-  
+      /* Check the development error */
+#if (FEE_DEV_ERROR_DETECT == STD_ON)
+  if(ModuleStatus == MEMIF_UNINIT)
+  {
+    Det_ReportError(FEE_MODULE_ID,FEE_INSTANCE_ID,FEE_GET_JOB_RESULT_ID,FEE_E_UNINIT);
+  }else{
+    /* Do Nothing */
+  }
+#endif
+  return JobResult;
 }
 /*******************************************************************************
 * Service Name: Fee_InvalidateBlock
