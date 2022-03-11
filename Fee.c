@@ -87,6 +87,7 @@ STATIC MemIf_JobResultType 	JobResult = MEMIF_JOB_OK;
 STATIC CurrentJobStateType      CurrentJobStatus = FEE_UNINITIALIZED;
 STATIC PendingJobType           PendingJob = NO_JOB;
 STATIC CurrentJobType 		CurrentJob;
+STATIC uint8                    FailCounter = 0; 
 
 /******************************************************************************
  *                      Helper Functions  Definitions                         *
@@ -114,25 +115,39 @@ STATIC boolean CheckFlsJobFinished(void)
 
 STATIC void FinishJob(MemIf_JobResultType jobResult)
 {
-	//AdminFls.FailCounter = 0;
-	//AdminFls.State = FEE_IDLE;
+	/* The Module will be idle */
         CurrentJobStatus = FEE_IDLE;
-	//SET_FEE_STATUS(MEMIF_IDLE);
-	//SET_FEE_JOBRESULT(jobResult);
-  
+	
+        ModuleStatus = MEMIF_IDLE;
+	
+        JobResult = jobResult;
 	if (jobResult == MEMIF_JOB_OK) {
-		if (Fee_Config.General.NvmJobEndCallbackNotificationCallback != NULL_PTR) {
-			Fee_Config.General.NvmJobEndCallbackNotificationCallback();
-		}
+          /* Call the nvm notifications if configured */
+          if (Fee_Config.General.NvmJobEndCallbackNotificationCallback != NULL_PTR) {
+		Fee_Config.General.NvmJobEndCallbackNotificationCallback();
+          }
 	}
 	else {
-		if (Fee_Config.General.NvmJobErrorCallbackNotificationCallback != NULL_PTR) {
-			Fee_Config.General.NvmJobErrorCallbackNotificationCallback();
-		}
+          if (Fee_Config.General.NvmJobErrorCallbackNotificationCallback != NULL_PTR) {
+		Fee_Config.General.NvmJobErrorCallbackNotificationCallback();
+          }
 	}
 }
+STATIC void AbortWriteJob(void) {
+	
+	// increase error counter
+	FailCounter++;
+	if (FailCounter > MAX_NOF_FAILED_WRITE_ATTEMPTS) {
+		FinishJob(MEMIF_JOB_FAILED);
+	}
+	else {
+		CurrentJobStatus = FEE_IDLE; // set idle state to restart write job
+	}
+}
+
 STATIC void Idle(void)
 {
+  
 }
 STATIC void Reading(void)
 {
@@ -165,15 +180,59 @@ STATIC void ReadWait(void)
 }
 STATIC void WriteData(void)
 {
+  if (Fls_GetStatus() == MEMIF_IDLE) {
+    
+        /* Get the address of the wanted block*/
+        Fls_AddressType address = BlockStartAddress[CurrentJob.Write.BlockIdx];
+	Std_ReturnType ret = Fls_Write(address ,CurrentJob.Write.DataPtr,Fee_Config.BlockConfig[CurrentJob.Write.BlockIdx].BlockSize);
+	if (ret == E_OK) {
+		CurrentJobStatus = FEE_WRITE_WAIT ;
+	}
+	else {
+		AbortWriteJob();
+	}
+    } 
 }
 STATIC void WriteDataWait(void)
 {
+  MemIf_JobResultType readResult;
+  /* Check if the job Finished in flash memory */
+  if (CheckFlsJobFinished()) {
+	readResult = Fls_GetJobResult();
+	if (MEMIF_JOB_OK == readResult) {
+          
+            PendingJob &= ~PENDING_WRITE_JOB;
+            FinishJob(MEMIF_JOB_OK);
+	}
+	else {
+            AbortWriteJob();
+	}
+  }
 }
 STATIC void Erase(void)
 {
+  uint8 block_index = CurrentJob.Erase.BlockIdx;
+  Fls_AddressType block_address = BlockStartAddress[block_index];
+  if (Fls_Erase(block_address,Fee_Config.BlockConfig[block_index].BlockSize) == E_OK) {
+	CurrentJobStatus = FEE_ERASE_WAIT;
+ }
 }
 STATIC void EraseWait(void)
 {
+  MemIf_JobResultType readResult;
+  if (CheckFlsJobFinished()) {
+      readResult = Fls_GetJobResult();
+      if (MEMIF_JOB_OK == readResult) {
+        PendingJob &= ~PENDING_ERASE_JOB;
+        FinishJob(MEMIF_JOB_OK);
+  }
+  else {
+    // failed to erase, set mode to idle to restart
+    CurrentJobStatus = FEE_IDLE;
+    // increase error counter
+    FailCounter++;
+		}
+	}
 }
 /******************************************************************************
  *                               APIS   Definitions                           *
@@ -452,20 +511,25 @@ void Fee_MainFunction(void)
   switch (CurrentJobStatus)
   {
   case FEE_IDLE:
-    
+    Idle();
     break;
   case FEE_READ:
-    
+    Reading();
     break;
   case FEE_READ_WAIT:
+    ReadWait();
     break;
   case FEE_WRITE:
+    WriteData();
     break;
   case FEE_WRITE_WAIT:
+    WriteDataWait();
     break;
   case FEE_ERASE:
+    Erase();
     break;
   case FEE_ERASE_WAIT:
+    EraseWait();
     break;
   default:
     break;

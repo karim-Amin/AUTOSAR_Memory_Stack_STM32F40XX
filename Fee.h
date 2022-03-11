@@ -101,6 +101,7 @@ typedef struct {
 STATIC sint16 Get_Block_Idx_From_Block_Number(uint16 block_num);
 STATIC boolean CheckFlsJobFinished(void);
 STATIC void FinishJob(MemIf_JobResultType jobResult);
+STATIC void AbortWriteJob(void);
 STATIC void Idle(void);
 STATIC void Reading(void);
 STATIC void ReadWait(void);

@@ -35,6 +35,7 @@
 
 #define FEE_NUM_OF_BLOCKS		         3
 
+#define MAX_NOF_FAILED_WRITE_ATTEMPTS		 5
 /* Divide the flash Memory into Banks */
 /* The configured blocks will be aligned from the start address of the first bank */
 #define FEE_BANK1_OFFSET			   0x4000
