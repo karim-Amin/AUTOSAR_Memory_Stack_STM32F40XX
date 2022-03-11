@@ -536,6 +536,58 @@ void Fee_MainFunction(void)
   }
 }
 /*******************************************************************************
+* Service Name: Fee_GetStatus
+* Sync/Async: Synchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): None 
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: MemIfStatusType :       MEMIF_UNINIT -> The FEE module has not been initialized.
+                                        MEMIF_BUSY -> The FEE module is currently busy.
+                                        MEMIF_BUSY_INTERNAL -> The FEE module is busy with internal management operations. 
+                                        MEMIF_IDLE -> The FEE module is currently idle.
+* Description: Service to return the status.  
+********************************************************************************/
+MemIf_StatusType Fee_GetStatus(void)
+{
+  /* Check the module status */
+  if(CurrentJobStatus == FEE_UNINITIALIZED)
+  {
+    return MEMIF_UNINIT;
+  }
+  else if(CurrentJobStatus == FEE_IDLE)
+  { 
+    return MEMIF_IDLE;
+  }
+  else
+  {
+    if(JobResult == MEMIF_JOB_PENDING)
+    {
+      return MEMIF_BUSY;
+    }
+  }
+  return MEMIF_BUSY_INTERNAL;
+}
+/*******************************************************************************
+* Service Name: Fee_GetJobResult
+* Sync/Async: Synchronous
+* Reentrancy: Non-reentrant
+* Parameters (in): None 
+* Parameters (inout): None
+* Parameters (out): None
+* Return value: MemIf_JobResultType :           MEMIF_JOB_OK ->  The last job has been finished successfully
+                                                MEMIF_JOB_PENDING ->The last job is waiting for execution or currently being executed. 
+                                                MEMIF_JOB_CANCELED ->The last job has been canceled (which means it failed).
+                                                MEMIF_JOB_FAILED ->The last job has not been finished successfully (it failed). 
+                                                MEMIF_BLOCK_INCONSISTENT ->  The requested block is inconsistent, it may contain corrupted data. 
+                                                MEMIF_BLOCK_INVALID ->  The requested block has been invalidated, the requested read operation can not be performed. 
+* Description: Service to query the result of the last accepted job issued by the upper layer software.  
+********************************************************************************/
+MemIf_JobResultType Fee_GetJobResult(void)
+{
+  
+}
+/*******************************************************************************
 * Service Name: Fee_InvalidateBlock
 * Sync/Async: ASynchronous
 * Reentrancy: Non-reentrant
