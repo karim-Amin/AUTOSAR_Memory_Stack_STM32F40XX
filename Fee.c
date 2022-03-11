@@ -103,6 +103,81 @@ STATIC sint16 Get_Block_Idx_From_Block_Number(uint16 block_num)
   }
   return -1;
 }
+  
+STATIC boolean CheckFlsJobFinished(void)
+{
+	MemIf_JobResultType flsJobResult;
+
+	flsJobResult = Fls_GetJobResult();
+	return (flsJobResult != MEMIF_JOB_PENDING);
+}
+
+STATIC void FinishJob(MemIf_JobResultType jobResult)
+{
+	//AdminFls.FailCounter = 0;
+	//AdminFls.State = FEE_IDLE;
+        CurrentJobStatus = FEE_IDLE;
+	//SET_FEE_STATUS(MEMIF_IDLE);
+	//SET_FEE_JOBRESULT(jobResult);
+  
+	if (jobResult == MEMIF_JOB_OK) {
+		if (Fee_Config.General.NvmJobEndCallbackNotificationCallback != NULL_PTR) {
+			Fee_Config.General.NvmJobEndCallbackNotificationCallback();
+		}
+	}
+	else {
+		if (Fee_Config.General.NvmJobErrorCallbackNotificationCallback != NULL_PTR) {
+			Fee_Config.General.NvmJobErrorCallbackNotificationCallback();
+		}
+	}
+}
+STATIC void Idle(void)
+{
+}
+STATIC void Reading(void)
+{
+  Fls_AddressType addr = BlockStartAddress[CurrentJob.Read.BlockIdx];
+  if( Fls_GetStatus() == MEMIF_IDLE)
+  {
+    /* Initiate the read tassk in underluing flash memory */
+    Std_ReturnType ret = Fls_Read(addr + CurrentJob.Read.DataOffset,CurrentJob.Read.DataPtr,CurrentJob.Read.Length);
+    if (ret == E_OK) {
+      
+	CurrentJobStatus = FEE_READ_WAIT;
+    }
+    else {
+	FinishJob(MEMIF_BLOCK_INCONSISTENT);
+    }
+  }
+}
+STATIC void ReadWait(void)
+{
+  if (CheckFlsJobFinished()) {
+	MemIf_JobResultType jobResult = Fls_GetJobResult();
+	PendingJob &= ~PENDING_READ_JOB;
+	if (jobResult == MEMIF_JOB_OK) {
+		FinishJob(MEMIF_JOB_OK);
+	}
+	else {
+		FinishJob(MEMIF_BLOCK_INCONSISTENT);
+	}
+    }
+}
+STATIC void WriteData(void)
+{
+}
+STATIC void WriteDataWait(void)
+{
+}
+STATIC void Erase(void)
+{
+}
+STATIC void EraseWait(void)
+{
+}
+/******************************************************************************
+ *                               APIS   Definitions                           *
+*******************************************************************************/
 /*******************************************************************************
 * Service Name: Fee_Init
 * Sync/Async: ASynchronous
@@ -258,18 +333,14 @@ Std_ReturnType Fee_Read(
   if(ModuleStatus == MEMIF_IDLE)
   {
     uint16 block_idx = Get_Block_Idx_From_Block_Number(blockNumber);
-    /* Get the start address for this block */
-    Fls_AddressType block_startAddress = BlockStartAddress[block_idx];
     ModuleStatus = MEMIF_BUSY;
     JobResult = MEMIF_JOB_PENDING;
     CurrentJobStatus = FEE_READ;
-    PendingJob = PENDING_READ_JOB;
+    PendingJob |= PENDING_READ_JOB;
     CurrentJob.Read.BlockIdx = block_idx;
     CurrentJob.Read.DataOffset = blockOffset;
     CurrentJob.Read.DataPtr = dataBufferPtr;
     CurrentJob.Read.Length = length;
-    /* Trigger fls_read Task */
-    Fls_Read((block_startAddress + blockOffset),dataBufferPtr,length);
   }
   return E_OK;
 }
@@ -328,16 +399,12 @@ Std_ReturnType Fee_Write(
   if(ModuleStatus == MEMIF_IDLE)
   {
     uint16 block_idx = Get_Block_Idx_From_Block_Number(blockNumber);
-    /* Get the start address for this block */
-    Fls_AddressType block_startAddress = BlockStartAddress[block_idx];
     ModuleStatus = MEMIF_BUSY;
     JobResult = MEMIF_JOB_PENDING;
     CurrentJobStatus = FEE_WRITE;
-    PendingJob = PENDING_WRITE_JOB;
+    PendingJob |= PENDING_WRITE_JOB;
     CurrentJob.Write.BlockIdx= block_idx;
     CurrentJob.Write.DataPtr = dataBufferPtr;
-    /* Trigger fls_write Task */
-    Fls_Write(block_startAddress,dataBufferPtr,Fee_Config.BlockConfig[block_idx].BlockSize);
   }
   return E_OK;
 }
@@ -375,6 +442,35 @@ void Fee_Cancel(void)
   }
 }
 
+/*******************************************************************************
+* Service Name: Fee_MainFunction
+* Timing : ON_PRE_CONDITION 
+* Description: Service to handle the requested read / write / erase jobs and the internal management operations.
+********************************************************************************/
+void Fee_MainFunction(void)
+{
+  switch (CurrentJobStatus)
+  {
+  case FEE_IDLE:
+    
+    break;
+  case FEE_READ:
+    
+    break;
+  case FEE_READ_WAIT:
+    break;
+  case FEE_WRITE:
+    break;
+  case FEE_WRITE_WAIT:
+    break;
+  case FEE_ERASE:
+    break;
+  case FEE_ERASE_WAIT:
+    break;
+  default:
+    break;
+  }
+}
 /*******************************************************************************
 * Service Name: Fee_InvalidateBlock
 * Sync/Async: ASynchronous
@@ -417,15 +513,11 @@ Std_ReturnType Fee_InvalidateBlock(uint16 blockNumber)
   {
     /* To Invalidate the block initiate erase operation */
     uint16 block_idx = Get_Block_Idx_From_Block_Number(blockNumber);
-    /* Get the start address for this block */
-    Fls_AddressType block_startAddress = BlockStartAddress[block_idx];
     ModuleStatus = MEMIF_BUSY;
     JobResult = MEMIF_JOB_PENDING;
     CurrentJobStatus = FEE_ERASE;
-    PendingJob = PENDING_ERASE_JOB;
+    PendingJob |= PENDING_ERASE_JOB;
     CurrentJob.Erase.BlockIdx=block_idx;
-    /* Trigger fls_Erase Task */
-    Fls_Erase(block_startAddress,Fee_Config.BlockConfig[block_idx].BlockSize);
     return E_OK;
   }else{
     return E_NOT_OK;

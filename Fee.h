@@ -99,6 +99,15 @@ typedef struct {
  *                        Functions ProtoType                                  *
 ********************************************************************************/
 STATIC sint16 Get_Block_Idx_From_Block_Number(uint16 block_num);
+STATIC boolean CheckFlsJobFinished(void);
+STATIC void FinishJob(MemIf_JobResultType jobResult);
+STATIC void Idle(void);
+STATIC void Reading(void);
+STATIC void ReadWait(void);
+STATIC void WriteData(void);
+STATIC void WriteDataWait(void);
+STATIC void Erase(void);
+STATIC void EraseWait(void);
 /*******************************************************************************
 * Service Name: Fee_MainFunction
 * Timing : ON_PRE_CONDITION 
