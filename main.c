@@ -6,7 +6,16 @@ const uint8 data_buffer[] = {0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0xAA,0
 uint8 read_data[32];
 int main(void)
 { 
- Fee_Init();
+  Fee_Init();
+  Fls_Init(&fls_configuration);
+  Fee_Write(FEE_BLOCK_BOOT_MANAGER_NUM,(uint8*)data_buffer);
+  
+  while(1){
+    Fee_MainFunction();
+    Fls_MainFunction();
+    
+  }
+ 
 }
 
 void Fee_JobEndNotification(void)

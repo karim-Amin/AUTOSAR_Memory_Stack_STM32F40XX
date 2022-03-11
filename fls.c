@@ -1086,7 +1086,7 @@ MemIf_JobResultType Fls_GetJobResult( void )
   }
   #endif
   /* returns the Last job result */
-  return g_Flash_Last_Job_Result;
+  return g_Flash_Job_Result;
 }
 #endif /* IF DET ENABLED */
 
