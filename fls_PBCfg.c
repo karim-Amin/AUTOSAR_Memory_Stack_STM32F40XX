@@ -70,13 +70,13 @@ const  Fls_configType  fls_configuration = { /* the latency (number of wait stat
                                             /* Mode of operation of flash module */
                                             MEMIF_MODE_SLOW ,
                                             /* The maximum number of bytes to read or compare in one cycle of the flash driver's job processing function in fast mode.*/
-                                            (12),
+                                            (32),
                                             /* The maximum number of bytes to read or compare in one cycle of the flash driver's job processing function in normal mode.*/
-                                            (12),
+                                            (16),
                                             /* The maximum number of bytes to Write in one cycle of the flash driver's job processing function in fast mode.*/
-                                            (12),
+                                            (32),
                                             /* The maximum number of bytes to Write in one cycle of the flash driver's job processing function in normal mode.*/
-                                            (12),
+                                            (16),
                                             /* Read protection level */
                                             read_level_0 ,
                                             /* Write protection enable */

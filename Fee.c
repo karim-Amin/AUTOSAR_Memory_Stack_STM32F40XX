@@ -184,7 +184,10 @@ STATIC void WriteData(void)
     
         /* Get the address of the wanted block*/
         Fls_AddressType address = BlockStartAddress[CurrentJob.Write.BlockIdx];
-	Std_ReturnType ret = Fls_Write(address ,CurrentJob.Write.DataPtr,Fee_Config.BlockConfig[CurrentJob.Write.BlockIdx].BlockSize);
+        /* Get The size of the Data Buffer which is Stored in the first location  */
+        Fls_LengthType Data_Length = *(CurrentJob.Write.DataPtr);
+        /* The Actual Data Starts from the second Location */
+	Std_ReturnType ret = Fls_Write(address ,++CurrentJob.Write.DataPtr,Data_Length);
 	if (ret == E_OK) {
 		CurrentJobStatus = FEE_WRITE_WAIT ;
 	}

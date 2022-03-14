@@ -291,8 +291,7 @@ STATIC void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
     /* Set the PG BIT (program) in the flash control register which bit number 0 */
     SET_BIT(FLASH->CR,FLS_BIT_NUMBER_0);
           
-    /* Lock again the control register for security (LOCK bit in 31 position) */
-    SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
+    
     
   /* Do not end the cycle untill handling the max number of bytes */
    while( (processed_bytes < g_max_bytes) && ( g_Length > FLS_ZERO_VALUE)){
@@ -348,6 +347,10 @@ STATIC void Helper_Write_Task_Cycle(uint8* Source_Buffer , uint8* Taregt_Buffer)
                break; 
            }
       }
+   /* Clear the PG bit */
+  CLEAR_BIT(FLASH->CR,FLS_BIT_NUMBER_0);
+  /* Lock again the control register for security (LOCK bit in 31 position) */
+    SET_BIT(FLASH->CR , FLS_BIT_NUMBER_31);
    if((g_Length == FLS_ZERO_VALUE) && (g_Flash_Job_Result == MEMIF_JOB_PENDING) )
    {
      /* reset the offest variable */

@@ -13,7 +13,7 @@
 
 #define FEE_MODULE_ID			21
 #define FEE_INSTANCE_ID                 0
-#define FEE_VENDOR_ID			1000
+#define FEE_VENDOR_ID			2000
 
 #define FEE_SW_MAJOR_VERSION	1
 #define FEE_SW_MINOR_VERSION	0
@@ -62,8 +62,6 @@
 #define FEE_JOB_ERROR_NOTIFICTION_ID		        0x11
 #define FEE_MAIN_FUNCTION_ID				0x12
 
-#define FEE_STARTUP_ID					0x40
-#define FEE_GARBAGE_WRITE_HEADER_ID		        0x41
 #define FEE_GLOBAL_ID					0xff
 /*******************************************************************************
  *                        Types Definitions                                    *
